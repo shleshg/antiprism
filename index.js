@@ -1,3 +1,3 @@
 const antiprism = module.exports;
 
-antiprism.Parser = require('./lib/parser');
+antiprism.Parser = require('./lib/parser/index');

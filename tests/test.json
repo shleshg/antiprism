@@ -1,0 +1,44 @@
+{
+	"datasource": [
+		{
+			"name": "provider"
+		},
+		{
+			"name": "port",
+			"value": 1337
+		}
+	],
+	"models": [
+		{
+			"name": "test",
+			"fields": [
+				{
+					"name": "a",
+					"type": {
+						"value": "Int",
+						"notNull": true
+					}
+				},
+				{
+					"name": "b",
+					"type": {
+						"value": "Float",
+						"notNull": true
+					}
+				}
+			]
+		},
+		{
+			"name": "test2",
+			"fields": [
+				{
+					"name": "s",
+					"type": {
+						"value": "DateTime",
+						"notNull": false
+					}
+				}
+			]
+		}
+	]
+}

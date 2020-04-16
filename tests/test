@@ -1,0 +1,13 @@
+datasource {
+provider = "postgresql"
+port = 1337
+}
+model test {
+a Int
+b Float
+}   
+
+
+model test2{
+  s DateTime?
+}
