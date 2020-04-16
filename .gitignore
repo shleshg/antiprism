@@ -10,3 +10,4 @@
 .idea/*
 config.sh
 db/upd.pgsql
+*node_modules
