@@ -1,13 +1,9 @@
 {
-	"datasource": [
-		{
-			"name": "provider"
-		},
-		{
-			"name": "port",
-			"value": 1337
-		}
-	],
+	"datasource": {
+		"provider": "postgresql",
+		"port": 1337,
+		"user": "help"
+	},
 	"models": [
 		{
 			"name": "test",
