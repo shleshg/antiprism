@@ -1,11 +1,12 @@
 datasource {
 provider = "postgresql"
 port = 1337
+user = "help"
 }
 model test {
 a Int
 b Float
-}   
+}
 
 
 model test2{
