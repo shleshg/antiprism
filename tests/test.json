@@ -1,40 +1,33 @@
 {
 	"datasource": {
 		"provider": "postgresql",
-		"port": 1337,
-		"user": "help"
+		"port": 5432,
+		"user": "promoter",
+		"password": "1promo2",
+		"database": "test_promoters"
 	},
 	"models": [
 		{
 			"name": "test",
-			"fields": [
-				{
-					"name": "a",
-					"type": {
-						"value": "Int",
-						"notNull": true
-					}
+			"fields": {
+				"a": {
+					"typeName": "Int",
+					"notNull": true
 				},
-				{
-					"name": "b",
-					"type": {
-						"value": "Float",
-						"notNull": true
-					}
+				"b": {
+					"typeName": "Float",
+					"notNull": true
 				}
-			]
+			}
 		},
 		{
 			"name": "test2",
-			"fields": [
-				{
-					"name": "s",
-					"type": {
-						"value": "DateTime",
-						"notNull": false
-					}
+			"fields": {
+				"s": {
+					"typeName": "DateTime",
+					"notNull": false
 				}
-			]
+			}
 		}
 	]
 }

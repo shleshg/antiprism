@@ -1,7 +1,9 @@
 datasource {
 provider = "postgresql"
-port = 1337
-user = "help"
+port = 5432
+user = "promoter"
+password = "1promo2"
+database = "test_promoters"
 }
 model test {
 a Int
