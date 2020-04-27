@@ -1,7 +1,4 @@
 const client = require('./client');
-// const fs = require('fs');
-//
-// const cfg = fs.readFileSync('test.json');
 
 client.NewProvider('tests/test.json').then(async (provider) => {
 	console.log('success init');
