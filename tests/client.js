@@ -1,5 +1,6 @@
-const antiprism = require('antiprism');
-class test extends antiprism.PostgresqlModel {
+const db = require('antiprism/lib/db/index');
+const postgresql = require('antiprism/lib/postgresql/index');
+class test extends postgresql.PostgresqlModel {
     constructor(provider, a, b) {
         super(provider, {
             name: 'test',
@@ -21,8 +22,8 @@ class test extends antiprism.PostgresqlModel {
     }
     static async createModel(provider, a, b) {
         (await provider.insertModel('test', [
-            new antiprism.SetParameter(provider, 'a', a),
-            new antiprism.SetParameter(provider, 'b', b)
+            new db.SetParameter(provider, 'a', a),
+            new db.SetParameter(provider, 'b', b)
         ]))
         return new test(provider, a, b);
     }
@@ -41,7 +42,7 @@ class test extends antiprism.PostgresqlModel {
     }
     set a(a) {
         return new Promise(async (resolve, reject) => {
-            await this.update([new antiprism.SetParameter(this._provider, 'a', a)]);
+            await this.update([new db.SetParameter(this._provider, 'a', a)]);
             resolve();
         });
     }
@@ -50,12 +51,12 @@ class test extends antiprism.PostgresqlModel {
     }
     set b(b) {
         return new Promise(async (resolve, reject) => {
-            await this.update([new antiprism.SetParameter(this._provider, 'b', b)]);
+            await this.update([new db.SetParameter(this._provider, 'b', b)]);
             resolve();
         });
     }
 }
-class test2 extends antiprism.PostgresqlModel {
+class test2 extends postgresql.PostgresqlModel {
     constructor(provider, s) {
         super(provider, {
             name: 'test2',
@@ -69,7 +70,7 @@ class test2 extends antiprism.PostgresqlModel {
         this._value = { s: s };
     }
     static async createModel(provider, s) {
-        (await provider.insertModel('test2', [new antiprism.SetParameter(provider, 's', s)]))
+        (await provider.insertModel('test2', [new db.SetParameter(provider, 's', s)]))
         return new test2(provider, s);
     }
     static async getModels(provider, fields, where, group, sort) {
@@ -87,7 +88,7 @@ class test2 extends antiprism.PostgresqlModel {
     }
     set s(s) {
         return new Promise(async (resolve, reject) => {
-            await this.update([new antiprism.SetParameter(this._provider, 's', s)]);
+            await this.update([new db.SetParameter(this._provider, 's', s)]);
             resolve();
         });
     }
@@ -96,7 +97,13 @@ const _exp = module.exports;
 _exp.test = test;
 _exp.test2 = test2;
 _exp.NewProvider = async function (config) {
-    const res = new antiprism.PostgresqlProvider(config.datasource.user, config.datasource.password, config.datasource.database, config.datasource.port, config.models);
+    if (typeof window === 'undefined') {
+        if (typeof config === 'string') {
+            config = JSON.parse(require('fs').readFileSync(config));
+        }
+    } else {
+    }
+    const res = new postgresql.PostgresqlProvider(config.datasource.user, config.datasource.password, config.datasource.database, config.datasource.port, config.models);
     await res.connect();
     return res;
 };

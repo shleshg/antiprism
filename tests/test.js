@@ -1,9 +1,9 @@
 const client = require('./client');
-const fs = require('fs');
+// const fs = require('fs');
+//
+// const cfg = fs.readFileSync('test.json');
 
-const cfg = fs.readFileSync('test.json');
-
-client.NewProvider(JSON.parse(cfg)).then(async (provider) => {
+client.NewProvider('tests/test.json').then(async (provider) => {
 	console.log('success init');
 	const created = await client.test.createModel(provider, 13, 37);
 	const cr = await client.test.getModels(provider, ['a', 'b']);
