@@ -1,4 +1,4 @@
 #!/bin/sh
 ":" //# comment; exec /usr/bin/env node --harmony-private-methods "$0" "$@"
 
-require('../lib/binaries/CLI.js');
+require('../src/binaries/CLI.js');

@@ -1,11 +1,11 @@
-const postgresql = require('./lib/postgresql/index');
-const mongo = require('./lib/mongo/index');
-const db = require('./lib/db/index');
+const postgresql = require('./src/postgresql/index');
+const mongo = require('./src/mongo/index');
+const db = require('./src/db/index');
 
 const antiprism = module.exports;
 
 
-antiprism.Parser = require('./lib/parser/index');
+antiprism.Parser = require('./src/parser/index');
 antiprism.DatabaseProvider = db.DatabaseProvider;
 antiprism.DatabaseModel = db.DatabaseModel;
 antiprism.SetParameter = db.SetParameter;

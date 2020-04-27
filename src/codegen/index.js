@@ -8,8 +8,8 @@ module.exports = function (antiprism) {
 	const toCode = {
 		type: 'Program',
 		body: [
-			util.requireStatement('db', 'antiprism/lib/db/index'),
-			util.requireStatement(providerName, 'antiprism/lib/' + providerName + '/index')
+			util.requireStatement('db', 'antiprism/src/db/index'),
+			util.requireStatement(providerName, 'antiprism/src/' + providerName + '/index')
 		]
 	};
 	toCode.body.push(
