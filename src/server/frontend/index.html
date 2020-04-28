@@ -1,28 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
+ <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
     <script src="/antiprism.js"></script>
     <script src="/web-client.js"></script>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-<script>
-    (async () => {
-		const provider = await NewProvider('/config.json');
-		console.log(provider);
-		const inserted = await test.createModel(provider, 14, 88);
-		console.log(inserted);
-		const models = await test.getModels(provider, ['a', new antiprism.GetParameter(provider, 'b')]);
-		console.log(models);
-    })();
-</script>
-<div>
-    <div>
-        
+<script src="/js/index.js"></script>
+<div id="Test"></div>
+<div class="main">
+    <div id="table-header" class="table-header">
+        <div class="header-selector">
+            <select id="model-select">
+            </select>
+        </div>
+        <div id="where">
+            where
+        </div>
+        <div id="sort">
+            sort
+        </div>
+        <div id="group">
+            group
+        </div>
+        <div id="get" onclick="getModels()">
+            get
+        </div>
+        <div id="delete">
+            -
+        </div>
+        <div id="insert">
+            +
+        </div>
     </div>
-    <div>
+    <div id="table-body" class="table-body">
+        <div id="table-contents" class="table-contents">
 
+        </div>
+        <div id="table-data" class="table-data">
+
+        </div>
     </div>
 </div>
 </body>

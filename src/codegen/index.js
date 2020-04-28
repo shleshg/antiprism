@@ -39,6 +39,20 @@ function generateClient(antiprism, isWeb) {
 		})
 	);
 	if (isWeb) {
+		toCode.body.push({
+			type: 'VariableDeclaration',
+			declarations: [
+				{
+					type: 'VariableDeclarator',
+					id: util.Identfier('AllModels'),
+					init: {
+						type: 'ObjectExpression',
+						properties: antiprism.models.map(m => provider.getModelAssignment(m.name))
+					}
+				}
+			],
+			kind: 'const'
+		});
 		toCode.body.push(provider.getModelWebProvider())
 	} else {
 		toCode.body.push(

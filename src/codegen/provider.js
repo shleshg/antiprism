@@ -148,6 +148,14 @@ function getModelProvider(antiprism) {
 	}
 }
 
+function getModelAssignment(name) {
+	return {
+		type: 'Property',
+		key: util.Literal(name),
+		value: util.Identfier(name)
+	}
+}
+
 function getModelWebProvider() {
 	return {
 		type: 'FunctionDeclaration',
@@ -273,3 +281,4 @@ function getModelWebProvider() {
 
 exp.getModelProvider = getModelProvider;
 exp.getModelWebProvider = getModelWebProvider;
+exp.getModelAssignment = getModelAssignment;

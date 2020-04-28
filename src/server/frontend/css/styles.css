@@ -1,0 +1,110 @@
+body {
+    overflow: hidden;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.main {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.table-header {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 40px;
+    background-color: #AFAFAF;
+    border-bottom: 2px solid;
+    align-items: center;
+}
+
+.table-header div {
+    height: 100%;
+    text-align: center;
+}
+
+.table-header div:not(:first-child) {
+    cursor: pointer;
+    text-align: center;
+}
+
+.table-header div:not(:first-child):hover {
+    background-color: #CFCFCF;
+}
+
+#where {
+    width: 12%;
+    margin-left: auto;
+}
+
+#sort {
+    width: 12%;
+}
+
+#group {
+    width: 12%;
+}
+
+#get {
+    width: 10%;
+}
+
+#delete {
+    width: 10%;
+}
+
+#insert {
+    width: 10%;
+}
+
+.table-body {
+    overflow-y: hidden;
+    overflow-x: auto;
+    width: 100%;
+    height: calc(100% - 40px);
+}
+
+.table-contents {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 40px;
+    background-color: #AFAFAF;
+    border-bottom: 2px solid;
+    align-items: center;
+}
+
+.table-data {
+    width: 100%;
+    height: calc(100% - 40px);
+    overflow-y: auto;
+    background-color: #CFCFCF
+}
+
+.row {
+    width: 100%;
+    height: 8%;
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid;
+    align-items: center;
+}
+
+.row:hover {
+    background-color: #8F8F8F;
+}
+
+.col {
+    text-align: center;
+}
+
+#Test {
+    position: absolute;
+    visibility: hidden;
+    height: auto;
+    width: auto;
+    white-space: nowrap;
+}
