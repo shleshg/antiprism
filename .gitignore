@@ -11,3 +11,4 @@
 config.sh
 db/upd.pgsql
 *node_modules
+generate
