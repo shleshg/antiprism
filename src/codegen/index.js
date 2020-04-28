@@ -17,21 +17,12 @@ function generateClient(antiprism, isWeb) {
 			const params = util.getModelParams(m);
 			return {
 				type: 'ClassDeclaration',
-				id: {
-					type: 'Identifier',
-					name: m.name
-				},
+				id: util.Identfier(m.name),
 				superClass: {
 					type: 'MemberExpression',
 					computed: false,
-					object: {
-						type: 'Identifier',
-						name: 'antiprism'
-					},
-					property: {
-						type: 'Identifier',
-						name: util.providers[providerName] + 'Model'
-					}
+					object: util.Identfier('antiprism'),
+					property: util.Identfier(util.providers[providerName] + 'Model')
 				},
 				body: {
 					type: 'ClassBody',
@@ -56,21 +47,12 @@ function generateClient(antiprism, isWeb) {
 				declarations: [
 					{
 						type: 'VariableDeclarator',
-						id: {
-							type: 'Identifier',
-							name: '_exp'
-						},
+						id: util.Identfier('_exp'),
 						init: {
 							type: 'MemberExpression',
 							computed: false,
-							object: {
-								type: 'Identifier',
-								name: 'module'
-							},
-							property: {
-								type: 'Identifier',
-								name: 'exports'
-							}
+							object: util.Identfier('module'),
+							property: util.Identfier('exports')
 						}
 					}
 				],
@@ -90,90 +72,64 @@ function generateServer(antiprism) {
 			util.requireStatement('antiprism', 'antiprism'),
 			util.requireStatement('client', './client'),
 			{
-				"type": "ExpressionStatement",
-				"expression": {
-					"type": "CallExpression",
-					"callee": {
-						"type": "ArrowFunctionExpression",
-						"id": null,
-						"params": [],
-						"body": {
-							"type": "BlockStatement",
-							"body": [
+				type: "ExpressionStatement",
+				expression: {
+					type: "CallExpression",
+					callee: {
+						type: "ArrowFunctionExpression",
+						id: null,
+						params: [],
+						body: {
+							type: "BlockStatement",
+							body: [
 								{
-									"type": "VariableDeclaration",
-									"declarations": [
+									type: "VariableDeclaration",
+									declarations: [
 										{
-											"type": "VariableDeclarator",
-											"id": {
-												"type": "Identifier",
-												"name": "provider"
-											},
-											"init": {
-												"type": "AwaitExpression",
-												"argument": {
-													"type": "CallExpression",
-													"callee": {
-														"type": "MemberExpression",
-														"computed": false,
-														"object": {
-															"type": "Identifier",
-															"name": "client"
-														},
-														"property": {
-															"type": "Identifier",
-															"name": "NewProvider"
-														}
+											type: "VariableDeclarator",
+											id: util.Identfier('provider'),
+											init: {
+												type: "AwaitExpression",
+												argument: {
+													type: "CallExpression",
+													callee: {
+														type: "MemberExpression",
+														computed: false,
+														object: util.Identfier('client'),
+														property: util.Identfier('NewProvider')
 													},
-													"arguments": [
-														{
-															"type": "Literal",
-															"value": "./config.json",
-															"raw": "'./config.json'"
-														}
+													arguments: [
+														util.Literal('./config.json')
 													]
 												}
 											}
 										}
 									],
-									"kind": "const"
+									kind: "const"
 								},
 								{
-									"type": "ExpressionStatement",
-									"expression": {
-										"type": "NewExpression",
-										"callee": {
-											"type": "MemberExpression",
-											"computed": false,
-											"object": {
-												"type": "Identifier",
-												"name": "antiprism"
-											},
-											"property": {
-												"type": "Identifier",
-												"name": "HttpServer"
-											}
+									type: "ExpressionStatement",
+									expression: {
+										type: "NewExpression",
+										callee: {
+											type: "MemberExpression",
+											computed: false,
+											object: util.Identfier('antiprism'),
+											property: util.Identfier('HttpServer')
 										},
-										"arguments": [
-											{
-												"type": "Literal",
-												"value": "/api/antiprism",
-												"raw": "'/api/antiprism'"
-											},
-											{
-												"type": "Identifier",
-												"name": "provider"
-											}
+										arguments: [
+											util.Literal('/api/antiprism'),
+											util.Identfier('provider')
 										]
 									}
 								}
 							]
 						},
-						"generator": false,
-						"expression": false,
-						"async": true
+						generator: false,
+						expression: false,
+						async: true
 					},
-					"arguments": []
+					arguments: []
 				}
 			}
 		]

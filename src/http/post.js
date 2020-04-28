@@ -1,6 +1,11 @@
 let httpId = 0;
 
-module.exports = async function (url, method, data) {
+async function fetchConfig(path) {
+	const resp = await fetch(path);
+	return await resp.json();
+}
+
+async function PostData(url, method, data) {
 	const requestId = ++httpId;
 	const response = await fetch(url, {
 		method: 'POST',
@@ -17,5 +22,8 @@ module.exports = async function (url, method, data) {
 			data: data
 		})
 	});
-	await response.json();
-};
+	return response.json();
+}
+
+module.exports.PostData = PostData;
+module.exports.fetchConfig = fetchConfig;

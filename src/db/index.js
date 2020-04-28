@@ -1,13 +1,4 @@
-let assert;
-if (typeof window === 'undefined') {
-	assert = require('assert').strict.ok;
-} else {
-	assert = function (cond, message) {
-		if (!cond) {
-			console.log(message);
-		}
-	}
-}
+const assert = require('assert').strict.ok;
 
 class DatabaseProvider {
 	constructor(models) {
@@ -190,12 +181,11 @@ class GroupingCondition {
 		this.provider = provider;
 	}
 }
-if (typeof window === 'undefined') {
-	exports.GetParameter = GetParameter;
-	exports.SetParameter = SetParameter;
-	exports.WhereCondition = WhereCondition;
-	exports.SortCondition = SortCondition;
-	exports.GroupingCondition = GroupingCondition;
-	exports.DatabaseProvider = DatabaseProvider;
-	exports.DatabaseModel = DatabaseModel;
-}
+
+exports.GetParameter = GetParameter;
+exports.SetParameter = SetParameter;
+exports.WhereCondition = WhereCondition;
+exports.SortCondition = SortCondition;
+exports.GroupingCondition = GroupingCondition;
+exports.DatabaseProvider = DatabaseProvider;
+exports.DatabaseModel = DatabaseModel;

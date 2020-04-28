@@ -4,8 +4,12 @@ class HttpServer {
 	constructor(url, provider) {
 		this.url = url;
 		this.app = express();
+		// this.app = require('express-ws')(this.app);
 		this.app.use(express.json());
 		this.app.use(express.static('frontend'));
+		// this.app.ws('/connect', async (ws, req) => {
+		//
+		// });
 		this.app.post(this.url, async (req, res) => {
 			const body = req.body;
 			console.log(body);

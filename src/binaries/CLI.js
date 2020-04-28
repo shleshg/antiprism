@@ -167,14 +167,13 @@ if (mainOptions.command === 'parse') {
 			return null;
 		}
 		fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'config.json'), JSON.stringify(antiprism, null, '\t'));
+		fs.copyFileSync(path.resolve(antiprismPath, 'src', 'web', 'antiprism.js'), path.resolve(dbOptions.output, 'frontend', 'antiprism.js'));
 		antiprism.datasource.provider = 'http';
 		fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'web-client.js'),
-			fs.readFileSync(path.resolve(antiprismPath, 'src', 'db', 'index.js')) + '\n' +
-			fs.readFileSync(path.resolve(antiprismPath, 'src', 'web', 'web.js')) + '\n' +
 			codegen.generateClient(antiprism, true));
 		fs.writeFileSync(path.resolve(dbOptions.output, 'server.js'), codegen.generateServer(antiprism));
-	}).catch(() => {
-		console.log('copy err')
+	}).catch((err) => {
+		console.log('catch', err)
 	});
 } else {
 	console.log(usage);

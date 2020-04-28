@@ -187,7 +187,12 @@ function getModelWebProvider() {
 										type: 'AwaitExpression',
 										argument: {
 											type: 'CallExpression',
-											callee: util.Identfier('fetchConfig'),
+											callee: {
+												type: 'MemberExpression',
+												computed: false,
+												object: util.Identfier('antiprism'),
+												property: util.Identfier('fetchConfig')
+											},
 											arguments: [
 												util.Identfier('config')
 											]

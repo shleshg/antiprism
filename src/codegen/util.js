@@ -13,22 +13,12 @@ function requireStatement(variable, path) {
 		declarations: [
 			{
 				type: 'VariableDeclarator',
-				id: {
-					type: 'Identifier',
-					name: variable
-				},
+				id: Identifier(variable),
 				init: {
 					type: 'CallExpression',
-					callee: {
-						type: 'Identifier',
-						name: 'require'
-					},
+					callee: Identifier('require'),
 					arguments: [
-						{
-							type: 'Literal',
-							value: path,
-							raw: '\'' + path + '\''
-						}
+						Literal(path)
 					]
 				}
 			}
@@ -46,20 +36,13 @@ function modelToAst(model) {
 		if (Object.prototype.hasOwnProperty.call(model, prop)) {
 			const property = {
 				type: 'Property',
-				key: {
-					type: 'Identifier',
-					name: prop,
-				},
+				key: Identifier(prop),
 				computed: false
 			};
 			if (model[prop] instanceof Object) {
 				property.value = exp.modelToAst(model[prop]);
 			} else {
-				property.value = {
-					type: 'Literal',
-					value: model[prop],
-					raw: '\'' + model[prop] + '\''
-				}
+				property.value = Literal(model[prop])
 			}
 			res.properties.push(property);
 		}
@@ -86,18 +69,31 @@ function getModelExport(name) {
 			left: {
 				type: 'MemberExpression',
 				computed: false,
-				object: {
-					type: 'Identifier',
-					name: '_exp'
-				},
-				property: {
-					type: 'Identifier',
-					name: name
-				}
+				object: Identifier('_exp'),
+				property: Identifier(name)
+			},
+			right: Identifier(name)
+		}
+	}
+}
+
+function getWebAntiprismImport(name, mod) {
+	return {
+		type: 'ExpressionStatement',
+		expression: {
+			type: 'AssignmentExpression',
+			operator: '=',
+			left: {
+				type: 'MemberExpression',
+				computed: false,
+				object: Identifier('antiprism'),
+				property: Identifier(name)
 			},
 			right: {
-				type: 'Identifier',
-				name: name
+				type: 'MemberExpression',
+				computed: false,
+				object: Identifier(mod),
+				property: Identifier(name)
 			}
 		}
 	}
@@ -125,3 +121,4 @@ exp.getModelParams = getModelParams;
 exp.modelToAst = modelToAst;
 exp.Identfier = Identifier;
 exp.Literal = Literal;
+exp.getWebAntiprismImport = getWebAntiprismImport;

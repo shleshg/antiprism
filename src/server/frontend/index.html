@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <script src="/antiprism.js"></script>
     <script src="/web-client.js"></script>
 </head>
 <body>
 <script>
     (async () => {
 		const provider = await NewProvider('/config.json');
+		console.log(provider);
 		const inserted = await test.createModel(provider, 14, 88);
 		console.log(inserted);
-		const models = await test.getModels(provider, ['a', new GetParameter(provider, 'b')]);
+		const models = await test.getModels(provider, ['a', new antiprism.GetParameter(provider, 'b')]);
 		console.log(models);
     })();
 </script>

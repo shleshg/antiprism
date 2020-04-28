@@ -1,5 +1,5 @@
 const db = require('../db');
-const PostData = require('./post');
+const PostData = require('./post').PostData;
 
 class HttpProvider extends db.DatabaseProvider {
 	constructor(user, password, database, port, models) {
