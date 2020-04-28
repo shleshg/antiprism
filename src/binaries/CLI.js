@@ -158,7 +158,6 @@ if (mainOptions.command === 'parse') {
 		return;
 	}
 	fs.writeFileSync(path.resolve(dbOptions.output, 'config.json'), JSON.stringify(antiprism, null, '\t'));
-	fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'config.json'), JSON.stringify(antiprism, null, '\t'));
 	fs.writeFileSync(dbOptions.output + '/client.js', codegen.generateClient(antiprism, false));
 	new Promise((resolve, reject) => {
 		ncp(path.resolve(antiprismPath, 'src', 'server', 'frontend'), path.resolve(dbOptions.output, 'frontend'), resolve)
@@ -167,6 +166,7 @@ if (mainOptions.command === 'parse') {
 			console.log('copy err', err);
 			return null;
 		}
+		fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'config.json'), JSON.stringify(antiprism, null, '\t'));
 		antiprism.datasource.provider = 'http';
 		fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'web-client.js'),
 			fs.readFileSync(path.resolve(antiprismPath, 'src', 'db', 'index.js')) + '\n' +
