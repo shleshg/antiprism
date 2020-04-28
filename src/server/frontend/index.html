@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/web-client.js"></script>
+</head>
+<body>
+<script>
+    (async () => {
+		const provider = await NewProvider('/config.json');
+		const inserted = await test.createModel(provider, 14, 88);
+		console.log(inserted);
+		const models = await test.getModels(provider, ['a', new GetParameter(provider, 'b')]);
+		console.log(models);
+    })();
+</script>
+<div>
+    <div>
+        
+    </div>
+    <div>
+
+    </div>
+</div>
+</body>
+</html>

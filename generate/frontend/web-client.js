@@ -199,3 +199,205 @@ if (typeof window === 'undefined') {
 	exports.DatabaseProvider = DatabaseProvider;
 	exports.DatabaseModel = DatabaseModel;
 }
+antiprism = {
+	DatabaseProvider: DatabaseProvider,
+	DatabaseModel: DatabaseModel,
+	GetParameter: GetParameter,
+	SetParameter: SetParameter,
+	WhereCondition: WhereCondition
+};
+
+let httpId = 0;
+
+async function fetchConfig(path) {
+	const resp = await fetch(path);
+	return await resp.json();
+}
+
+async function PostData(url, method, data) {
+	const requestId = ++httpId;
+	const response = await fetch(url, {
+		method: 'POST',
+		mode: 'cors',
+		cache: 'no-cache',
+		credentials: 'omit',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		redirect: 'follow',
+		body: JSON.stringify({
+			method: method,
+			id: requestId,
+			data: data
+		})
+	});
+	return await response.json();
+}
+
+class HttpProvider extends antiprism.DatabaseProvider {
+	constructor(user, password, database, port, models, url) {
+		super(models);
+		this.url = '/api/antiprism';
+	}
+
+	connect() {
+		return this.exec('ping', null, null);
+	}
+
+	disconnect() {
+		return true;
+	}
+
+	async insertModel(model, sets) {
+		if (!this.validateSets(model, sets)) {
+			throw new Error('invalid params');
+		}
+		const res = await this.exec('insert', {model: model, sets: sets.map(s => s.toObject())});
+		return res.result;
+	}
+
+	async getModels(model, fields, where, group, sort) {
+		if (!this.validateGets(model, fields)) {
+			throw new Error('invalid params');
+		}
+		const res = await this.exec('get', {model: model, fields: fields, where: where, group: group, sort: sort});
+		return res.result;
+	}
+
+	async updateModels(model, sets, where) {
+		if (!this.validateSets(model, sets)) {
+			throw new Error('invalid params');
+		}
+		const res = await this.exec('update', {model: model, sets: sets});
+		return res.result;
+	}
+
+	async deleteModels(model, where) {
+		const res = await this.exec('delete', {model: model, where: where});
+		return res.result;
+	}
+
+	async exec(method, data) {
+		return PostData(this.url, method, data);
+	}
+}
+
+class HttpModel extends antiprism.DatabaseModel {
+	constructor(provider, model) {
+		super(provider, model);
+		assert(provider instanceof HttpProvider)
+	}
+	static async getModels(provider, fields, where, group, sort) {
+		assert(false, 'unimplemented get models');
+	}
+	async update(sets) {
+		assert(false, 'unimplemented update');
+	}
+	async delete() {
+		assert(false, 'unimplemented delete');
+	}
+}
+
+antiprism.HttpProvider = HttpProvider;
+antiprism.HttpModel = HttpModel;
+class test extends antiprism.HttpModel {
+    constructor(provider, a, b) {
+        super(provider, {
+            name: 'test',
+            fields: {
+                a: {
+                    typeName: 'Int',
+                    notNull: true
+                },
+                b: {
+                    typeName: 'Float',
+                    notNull: true
+                }
+            }
+        });
+        this._value = {
+            a: a,
+            b: b
+        };
+    }
+    static async createModel(provider, a, b) {
+        (await provider.insertModel('test', [
+            new antiprism.SetParameter(provider, 'a', a),
+            new antiprism.SetParameter(provider, 'b', b)
+        ]))
+        return new test(provider, a, b);
+    }
+    static async getModels(provider, fields, where, group, sort) {
+        const values = await provider.getModels('test', fields, where, group, sort);
+        return values.map(v => new test(provider, v.a, v.b, true));
+    }
+    async update(sets) {
+        await this._provider.updateModels('test', sets, []);
+    }
+    async delete() {
+        await this._provider.deleteModels('test', []);
+    }
+    get a() {
+        return this._value.a;
+    }
+    set a(a) {
+        return new Promise(async (resolve, reject) => {
+            await this.update([new antiprism.SetParameter(this._provider, 'a', a)]);
+            resolve();
+        });
+    }
+    get b() {
+        return this._value.b;
+    }
+    set b(b) {
+        return new Promise(async (resolve, reject) => {
+            await this.update([new antiprism.SetParameter(this._provider, 'b', b)]);
+            resolve();
+        });
+    }
+}
+class test2 extends antiprism.HttpModel {
+    constructor(provider, s) {
+        super(provider, {
+            name: 'test2',
+            fields: {
+                s: {
+                    typeName: 'DateTime',
+                    notNull: false
+                }
+            }
+        });
+        this._value = { s: s };
+    }
+    static async createModel(provider, s) {
+        (await provider.insertModel('test2', [new antiprism.SetParameter(provider, 's', s)]))
+        return new test2(provider, s);
+    }
+    static async getModels(provider, fields, where, group, sort) {
+        const values = await provider.getModels('test2', fields, where, group, sort);
+        return values.map(v => new test2(provider, v.s, true));
+    }
+    async update(sets) {
+        await this._provider.updateModels('test2', sets, []);
+    }
+    async delete() {
+        await this._provider.deleteModels('test2', []);
+    }
+    get s() {
+        return this._value.s;
+    }
+    set s(s) {
+        return new Promise(async (resolve, reject) => {
+            await this.update([new antiprism.SetParameter(this._provider, 's', s)]);
+            resolve();
+        });
+    }
+}
+async function NewProvider(config) {
+    if (typeof config === 'string') {
+        config = await fetchConfig(config);
+    }
+    const res = new antiprism.HttpProvider(config.datasource.user, config.datasource.password, config.datasource.database, config.datasource.port, config.models);
+    await res.connect();
+    return res;
+}

@@ -40,7 +40,7 @@ function validateDataSource(dataSource) {
 	return true;
 }
 
-exp.validateAntiprismFile = function (antiprism) {
+exports = validateAntiprismFile = function (antiprism) {
 	return validateDataSource(antiprism.datasource) &&
 		checkUnique(antiprism.models) &&
 		antiprism.models

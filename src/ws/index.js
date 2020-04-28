@@ -1,4 +1,2 @@
-const exp = module.exports;
-
-exp.WsProvider = require('./provider');
-exp.WsModel = require('./model');
+exports.WsProvider = require('./provider');
+exports.WsModel = require('./model');

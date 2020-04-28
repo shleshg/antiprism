@@ -1,11 +1,16 @@
 const commandLineArgs = require('command-line-args');
 const commandLineUsage = require('command-line-usage');
+const path = require('path');
 const fs = require('fs');
+const ncp = require('ncp').ncp;
+ncp.limit = 16;
+const browserify = require('browserify');
 const parser = require('../parser');
 const utils = require('../utils');
 const codegen = require('../codegen');
 const postgresql = require('../postgresql');
 
+const antiprismPath = path.resolve(__dirname, '..', '..')
 
 const sections = [
 	{
@@ -87,7 +92,8 @@ if (mainOptions.command === 'parse') {
 					return 0;
 				})
 				.finally(() => pg.disconnect())
-				.finally(() => {});
+				.finally(() => {
+				});
 		});
 	} else {
 
@@ -125,7 +131,51 @@ if (mainOptions.command === 'parse') {
 
 	}
 } else if (mainOptions.command === 'generate') {
-
+	const dbDefinitions = definitions.concat([
+		{name: 'antiprism', alias: 'a', type: String}
+	]);
+	const dbOptions = commandLineArgs(dbDefinitions, {argv});
+	if (!dbOptions.input && !dbOptions.antiprism) {
+		console.log(usage);
+		return;
+	}
+	let antiprism;
+	if (dbOptions.antiprism) {
+		antiprism = JSON.parse(fs.readFileSync(dbOptions.antiprism).toString());
+		if (!utils.validateAntiprismFile(antiprism)) {
+			console.log('wrong antiprism');
+			return;
+		}
+	} else {
+		if (!dbOptions.input) {
+			console.log('wrong input');
+			return;
+		}
+		antiprism = parser.parseFile(dbOptions.input);
+	}
+	if (!dbOptions.output) {
+		console.log('output required');
+		return;
+	}
+	fs.writeFileSync(path.resolve(dbOptions.output, 'config.json'), JSON.stringify(antiprism, null, '\t'));
+	fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'config.json'), JSON.stringify(antiprism, null, '\t'));
+	fs.writeFileSync(dbOptions.output + '/client.js', codegen.generateClient(antiprism, false));
+	new Promise((resolve, reject) => {
+		ncp(path.resolve(antiprismPath, 'src', 'server', 'frontend'), path.resolve(dbOptions.output, 'frontend'), resolve)
+	}).then(err => {
+		if (err) {
+			console.log('copy err', err);
+			return null;
+		}
+		antiprism.datasource.provider = 'http';
+		fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'web-client.js'),
+			fs.readFileSync(path.resolve(antiprismPath, 'src', 'db', 'index.js')) + '\n' +
+			fs.readFileSync(path.resolve(antiprismPath, 'src', 'web', 'web.js')) + '\n' +
+			codegen.generateClient(antiprism, true));
+		fs.writeFileSync(path.resolve(dbOptions.output, 'server.js'), codegen.generateServer(antiprism));
+	}).catch(() => {
+		console.log('copy err')
+	});
 } else {
 	console.log(usage);
 }

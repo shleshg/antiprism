@@ -1,4 +1,2 @@
-const exp = module.exports;
-
-exp.PostgresqlProvider = require('./provider');
-exp.PostgresqlModel = require('./model');
+exports.PostgresqlProvider = require('./provider');
+exports.PostgresqlModel = require('./model');

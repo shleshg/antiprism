@@ -1,0 +1,4 @@
+class WsServer {
+	constructor() {
+	}
+}

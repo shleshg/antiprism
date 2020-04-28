@@ -1,12 +1,12 @@
 const db = require('../db');
 
-let id = 0;
+let wsId = 0;
 let subId = 0;
 
 class WsProvider extends db.DatabaseProvider {
 	constructor(user, password, database, port, models, url) {
 		super(models);
-		this.url = url;
+		this.url = document.location.host + '/connect';
 		this.opened = false;
 		this.callbacks = new Map();
 		this.subCallbacks = new Map();
@@ -93,7 +93,7 @@ class WsProvider extends db.DatabaseProvider {
 			console.log('socket not opened');
 			return null;
 		}
-		const requestId = ++id;
+		const requestId = ++wsId;
 		const callbackWait = new Promise((resolve, reject) => {
 			this.callbacks.set(requestId, (res) => {
 				resolve(res);

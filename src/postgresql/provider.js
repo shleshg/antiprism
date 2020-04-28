@@ -50,7 +50,7 @@ class PostgresqlProvider extends db.DatabaseProvider {
 		if (!this.validateGets(model, fields)) {
 			throw new Error('invalid params');
 		}
-		const cmd = 'select ' + fields.map(f => f instanceof db.GetParameter ? f.name : f).join(',') + ' from ' + model + ';';
+		const cmd = 'select ' + fields.map(f => typeof f === 'string' ? f : f.name).join(',') + ' from ' + model + ';';
 		console.log(cmd);
 		const res = await this.exec(cmd, []);
 		return res.rows;

@@ -1,7 +1,6 @@
 const fs = require('fs');
 
 class Parser {
-	parse;
 	constructor() {
 		this.parse = require('./parser').parse;
 	}

@@ -1,7 +1,10 @@
 const exp = module.exports;
 
 const providers = {
-	'postgresql': 'Postgresql'
+	'mongo': 'Mongo',
+	'postgresql': 'Postgresql',
+	'http': 'Http',
+	'ws': 'Ws'
 };
 
 function requireStatement(variable, path) {
@@ -100,8 +103,25 @@ function getModelExport(name) {
 	}
 }
 
+function Identifier(name) {
+	return {
+		type: 'Identifier',
+		name: name
+	}
+}
+
+function Literal(value) {
+	return {
+		type: 'Literal',
+		value: value,
+		raw: '\'' + value +'\''
+	}
+}
+
 exp.providers = providers;
 exp.requireStatement = requireStatement;
 exp.getModelExport = getModelExport;
 exp.getModelParams = getModelParams;
 exp.modelToAst = modelToAst;
+exp.Identfier = Identifier;
+exp.Literal = Literal;

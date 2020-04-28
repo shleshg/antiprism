@@ -9,6 +9,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "prepare": "require-self",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,10 +19,17 @@
   "author": "Oleg Shatnyuk",
   "license": "ISC",
   "dependencies": {
+    "browserify": "^16.5.1",
     "command-line-args": "^5.1.1",
     "command-line-usage": "^6.1.0",
     "escodegen": "^1.14.1",
+    "express": "^4.17.1",
     "mongodb": "^3.5.6",
-    "pg": "^8.0.2"
+    "ncp": "^2.0.0",
+    "pg": "^8.0.2",
+    "ws": "^7.2.5"
+  },
+  "devDependencies": {
+    "require-self": "^0.2.3"
   }
 }

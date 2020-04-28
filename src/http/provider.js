@@ -2,9 +2,9 @@ const db = require('../db');
 const PostData = require('./post');
 
 class HttpProvider extends db.DatabaseProvider {
-	constructor(user, password, database, port, models, url) {
+	constructor(user, password, database, port, models) {
 		super(models);
-		this.url = url;
+		this.url = '/api/antiprism';
 	}
 
 	connect() {
@@ -19,29 +19,33 @@ class HttpProvider extends db.DatabaseProvider {
 		if (!this.validateSets(model, sets)) {
 			throw new Error('invalid params');
 		}
-		return this.exec('insert', model, {sets: sets.map(s => s.toObject())});
+		const res = await this.exec('insert', {model: model, sets: sets.map(s => s.toObject())});
+		return res.result;
 	}
 
 	async getModels(model, fields, where, group, sort) {
 		if (!this.validateGets(model, fields)) {
 			throw new Error('invalid params');
 		}
-		return this.exec('get', model, {fields: fields, where: where, group: group, sort: sort});
+		const res = await this.exec('get', {model: model, fields: fields, where: where, group: group, sort: sort});
+		return res.result;
 	}
 
 	async updateModels(model, sets, where) {
 		if (!this.validateSets(model, sets)) {
 			throw new Error('invalid params');
 		}
-		return this.exec('update', model, {sets: sets});
+		const res = await this.exec('update', {model: model, sets: sets});
+		return res.result;
 	}
 
 	async deleteModels(model, where) {
-		return this.exec('delete', model, {where: where});
+		const res = await this.exec('delete', {model: model, where: where});
+		return res.result;
 	}
 
-	async exec(method, model, data) {
-		return PostData(this.url, method, {model: model, data: data});
+	async exec(method, data) {
+		return PostData(this.url, method, data);
 	}
 }
 

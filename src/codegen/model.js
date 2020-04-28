@@ -1,14 +1,11 @@
 const util = require('./util');
 const exp = module.exports;
 
-function getFieldGetterAndSetter(name) {
+function getFieldGetterAndSetter(providerName, name) {
 	return [
 		{
 			type: 'MethodDefinition',
-			key: {
-				type: 'Identifier',
-				name: name
-			},
+			key: util.Identfier(name),
 			computed: false,
 			value: {
 				type: 'FunctionExpression',
@@ -28,15 +25,9 @@ function getFieldGetterAndSetter(name) {
 									object: {
 										type: 'ThisExpression'
 									},
-									property: {
-										type: 'Identifier',
-										name: '_value'
-									}
+									property: util.Identfier('_value')
 								},
-								property: {
-									type: 'Identifier',
-									name: name
-								}
+								property: util.Identfier(name)
 							}
 						}
 					]
@@ -50,19 +41,13 @@ function getFieldGetterAndSetter(name) {
 		},
 		{
 			type: 'MethodDefinition',
-			key: {
-				type: 'Identifier',
-				name: name
-			},
+			key: util.Identfier(name),
 			computed: false,
 			value: {
 				type: 'FunctionExpression',
 				id: null,
 				params: [
-					{
-						type: 'Identifier',
-						name: name
-					}
+					util.Identfier(name)
 				],
 				body: {
 					type: 'BlockStatement',
@@ -71,23 +56,14 @@ function getFieldGetterAndSetter(name) {
 							type: 'ReturnStatement',
 							argument: {
 								type: 'NewExpression',
-								callee: {
-									type: 'Identifier',
-									name: 'Promise'
-								},
+								callee: util.Identfier('Promise'),
 								arguments: [
 									{
 										type: 'ArrowFunctionExpression',
 										id: null,
 										params: [
-											{
-												type: 'Identifier',
-												name: 'resolve'
-											},
-											{
-												type: 'Identifier',
-												name: 'reject'
-											}
+											util.Identfier('resolve'),
+											util.Identfier('reject')
 										],
 										body: {
 											type: 'BlockStatement',
@@ -104,10 +80,7 @@ function getFieldGetterAndSetter(name) {
 																object: {
 																	type: 'ThisExpression'
 																},
-																property: {
-																	type: 'Identifier',
-																	name: 'update'
-																}
+																property: util.Identfier('update')
 															},
 															arguments: [
 																{
@@ -118,14 +91,8 @@ function getFieldGetterAndSetter(name) {
 																			callee: {
 																				type: 'MemberExpression',
 																				computed: false,
-																				object: {
-																					type: 'Identifier',
-																					name: 'db'
-																				},
-																				property: {
-																					type: 'Identifier',
-																					name: 'SetParameter'
-																				}
+																				object: util.Identfier('antiprism'),
+																				property: util.Identfier('SetParameter')
 																			},
 																			arguments: [
 																				{
@@ -134,20 +101,10 @@ function getFieldGetterAndSetter(name) {
 																					object: {
 																						type: 'ThisExpression'
 																					},
-																					property: {
-																						type: 'Identifier',
-																						name: '_provider'
-																					}
+																					property: util.Identfier('_provider')
 																				},
-																				{
-																					type: 'Literal',
-																					value: name,
-																					raw: '\'' + name + '\''
-																				},
-																				{
-																					type: 'Identifier',
-																					name: name
-																				}
+																				util.Literal(name),
+																				util.Identfier(name)
 																			]
 																		}
 																	]
@@ -160,10 +117,7 @@ function getFieldGetterAndSetter(name) {
 													type: 'ExpressionStatement',
 													expression: {
 														type: 'CallExpression',
-														callee: {
-															type: 'Identifier',
-															name: 'resolve'
-														},
+														callee: util.Identfier('resolve'),
 														arguments: []
 													}
 												}
@@ -188,7 +142,7 @@ function getFieldGetterAndSetter(name) {
 	]
 }
 
-function getModelConstructor(model, params) {
+function getModelConstructor(providerName, model, params) {
 	return {
 		type: 'MethodDefinition',
 		key: {
@@ -277,7 +231,7 @@ function getModelConstructor(model, params) {
 	}
 }
 
-function getModelCreateFunction(model, params) {
+function getModelCreateFunction(providerName, model, params) {
 	return {
 		type: 'MethodDefinition',
 		key: {
@@ -335,7 +289,7 @@ function getModelCreateFunction(model, params) {
 												computed: false,
 												object: {
 													type: 'Identifier',
-													name: 'db'
+													name: 'antiprism'
 												},
 												property: {
 													type: 'Identifier',
@@ -397,7 +351,7 @@ function getModelCreateFunction(model, params) {
 	}
 }
 
-function getModelGetFunction(model, params) {
+function getModelGetFunction(providerName, model, params) {
 	return {
 		type: 'MethodDefinition',
 		key: {
@@ -564,7 +518,7 @@ function getModelGetFunction(model, params) {
 	};
 }
 
-function getModelUpdateFunction(model) {
+function getModelUpdateFunction(providerName, model) {
 	return {
 		type: 'MethodDefinition',
 		key: {
@@ -638,7 +592,7 @@ function getModelUpdateFunction(model) {
 	};
 }
 
-function getModelDeleteFunction(model) {
+function getModelDeleteFunction(providerName, model) {
 	return {
 		type: 'MethodDefinition',
 		key: {

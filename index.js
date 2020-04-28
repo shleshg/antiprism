@@ -1,14 +1,21 @@
-const postgresql = require('./src/postgresql/index');
-const mongo = require('./src/mongo/index');
-const db = require('./src/db/index');
+const postgresql = require('./src/postgresql');
+const mongo = require('./src/mongo');
+const db = require('./src/db');
+const http = require('./src/http');
+const ws = require('./src/ws');
+const server = require('./src/server');
 
-const antiprism = module.exports;
 
-
-antiprism.Parser = require('./src/parser/index');
-antiprism.DatabaseProvider = db.DatabaseProvider;
-antiprism.DatabaseModel = db.DatabaseModel;
-antiprism.SetParameter = db.SetParameter;
-antiprism.GetParameter = db.GetParameter;
-antiprism.PostgresqlProvider = postgresql.PostgresqlProvider;
-antiprism.PostgresqlModel = postgresql.PostgresqlModel;
+exports.Parser = require('./src/parser');
+exports.DatabaseProvider = db.DatabaseProvider;
+exports.DatabaseModel = db.DatabaseModel;
+exports.SetParameter = db.SetParameter;
+exports.GetParameter = db.GetParameter;
+exports.WhereCondition = db.WhereCondition;
+exports.PostgresqlProvider = postgresql.PostgresqlProvider;
+exports.PostgresqlModel = postgresql.PostgresqlModel;
+exports.HttpProvider = http.HttpProvider;
+exports.HttpModel = http.HttpModel;
+exports.PostData = http.PostData;
+exports.WsProvider = ws.WsProvider;
+exports.HttpServer = server.HttpServer;
