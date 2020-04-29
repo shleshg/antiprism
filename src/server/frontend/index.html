@@ -6,19 +6,29 @@
     <script src="/web-client.js"></script>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
+<body onload="load()">
 <script src="/js/index.js"></script>
 <div id="Test"></div>
-<div class="main">
+<div class="dialog-background dialog-background-back" onclick="closeDialog()">
+    <div class="dialog" onclick="handleDialog(event)">
+        <div class="dialog-body" id="dialog-body">
+
+        </div>
+        <div class="dialog-control" id="dialog-control">
+
+        </div>
+    </div>
+</div>
+<div class="main" >
     <div id="table-header" class="table-header">
         <div class="header-selector">
             <select id="model-select">
             </select>
         </div>
-        <div id="where">
+        <div id="where" onclick="openDialog('where')">
             where
         </div>
-        <div id="sort">
+        <div id="sort" onclick="openDialog('sort')">
             sort
         </div>
         <div id="group">
@@ -27,10 +37,10 @@
         <div id="get" onclick="getModels()">
             get
         </div>
-        <div id="delete">
+        <div id="delete" onclick="openDialog('delete')">
             -
         </div>
-        <div id="insert">
+        <div id="insert" onclick="openDialog('insert')">
             +
         </div>
     </div>

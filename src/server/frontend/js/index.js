@@ -36,6 +36,11 @@ function getModelParams(model) {
 	return res;
 }
 
+function getModelValues(model, object) {
+	const params = getModelParams(model);
+	return params.map(p => object[p]);
+}
+
 function calcText(text, fontSize) {
 	const test = document.getElementById('Test');
 	test.style.fontSize = fontSize;
@@ -103,8 +108,10 @@ function reRender() {
 	const params = getModelParams(currentModel);
 	const data = document.getElementById('table-data');
 	dropAllChilds(data);
-	objects.forEach(o => {
+	objects.forEach((o, index) => {
 		const elem = document.createElement('div');
+		elem.id = 'row' + index;
+		elem.onclick = openDialog.bind(null, 'item', index);
 		elem.classList.add('row');
 		params.forEach((p, index) => {
 			const property = document.createElement('div');
@@ -116,6 +123,67 @@ function reRender() {
 		data.appendChild(elem);
 	});
 	reCalcSize();
+}
+
+function addButtons(elem, names) {
+	names.forEach(n => {
+		const div = document.createElement('div');
+		div.classList.add(names.length === 1 ? 'dialog-single-button' : 'dialog-two-button');
+		div.innerText = n;
+		elem.appendChild(div);
+	})
+}
+
+function addFields(elem, names, values) {
+	names.forEach((n, index) => {
+		const div = document.createElement('div');
+		div.classList.add('dialog-field');
+		const fieldName = document.createElement('span');
+		fieldName.innerText = n;
+		const input = document.createElement('input');
+		input.id = 'input-' + n;
+		if (values) {
+			input.value = values[index];
+		}
+		div.appendChild(fieldName);
+		div.appendChild(input);
+		elem.appendChild(div);
+	})
+}
+
+function openDialog(operation, index) {
+	const elems = document.getElementsByClassName('dialog-background-back');
+	for (let i = 0; i < elems.length; i++) {
+		elems[i].classList.replace('dialog-background-back', 'dialog-background-front')
+	}
+	if (operation === 'insert') {
+		addButtons(document.getElementById('dialog-control'), ['insert']);
+		addFields(document.getElementById('dialog-body'), getModelParams(currentModel));
+	} else if (operation === 'delete') {
+		addButtons(document.getElementById('dialog-control'), ['delete']);
+	} else if (operation === 'item') {
+		addButtons(document.getElementById('dialog-control'), ['update', 'delete']);
+		addFields(document.getElementById('dialog-body'), getModelParams(currentModel), getModelValues(currentModel, objects[index]))
+	} else if (operation === 'where') {
+		addButtons(document.getElementById('dialog-control'), ['ok']);
+	} else if (operation === 'sort') {
+		addButtons(document.getElementById('dialog-control'), ['ok']);
+	}
+}
+
+function closeDialog() {
+	console.log('click back')
+	const elems = document.getElementsByClassName('dialog-background-front');
+	for (let i = 0; i < elems.length; i++) {
+		elems[i].classList.replace('dialog-background-front', 'dialog-background-back')
+	}
+	dropAllChilds(document.getElementsByClassName('dialog-body')[0]);
+	dropAllChilds(document.getElementsByClassName('dialog-control')[0]);
+}
+
+function handleDialog(event) {
+	console.log('click dialog');
+	event.stopPropagation();
 }
 
 async function getModels() {
@@ -132,13 +200,9 @@ async function deleteModels() {
 
 }
 
-(async () => {
+async function load() {
 	config = await antiprism.fetchConfig('/config.json');
 	fillSelector(config);
 	provider = await NewProvider(config);
 	console.log(provider);
-	const inserted = await test.createModel(provider, 14, 88);
-	console.log(inserted);
-	const models = await test.getModels(provider, ['a', new antiprism.GetParameter(provider, 'b')]);
-	console.log(models);
-})();
+}

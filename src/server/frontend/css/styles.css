@@ -9,6 +9,7 @@ body {
     overflow: hidden;
     width: 100%;
     height: 100%;
+    z-index: 2;
 }
 
 .table-header {
@@ -107,4 +108,72 @@ body {
     height: auto;
     width: auto;
     white-space: nowrap;
+}
+
+.dialog-background {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background-color: #6F6F6FA0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dialog-background-front {
+    z-index: 3;
+}
+
+.dialog-background-back {
+    visibility: hidden;
+    z-index: 1;
+}
+
+.dialog {
+    width: 40%;
+    height: 50%;
+    display: flex;
+    flex-direction: column;
+    background-color: #CFCFCF;
+}
+
+.dialog-body {
+    width: 100%;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.dialog-field {
+    width: 100%;
+    height: 15%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.dialog-control {
+    width: 100%;
+    height: 10%;
+    display: flex;
+    flex-direction: row;
+}
+
+.dialog-single-button, .dialog-two-button {
+    height: 100%;
+    cursor: pointer;
+    text-align: center;
+}
+
+.dialog-single-button:hover, .dialog-two-button:hover {
+    background-color: #AFAFAF;
+}
+
+.dialog-single-button {
+    width: 100%;
+}
+
+.dialog-two-button {
+    width: 50%;
 }
