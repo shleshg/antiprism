@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body onload="load()">
+<script src="/js/subscribe.js"></script>
 <script src="/js/index.js"></script>
-<div id="Test"></div>
 <div class="dialog-background dialog-background-back" onclick="closeDialog()">
     <div class="dialog" onclick="handleDialog(event)">
         <div class="dialog-body" id="dialog-body">
@@ -37,6 +37,9 @@
         <div id="get" onclick="getModels()">
             get
         </div>
+        <div id="sub" onclick="subscribeModels()">
+            sub
+        </div>
         <div id="delete" onclick="openDialog('delete')">
             -
         </div>
@@ -45,6 +48,7 @@
         </div>
     </div>
     <div id="table-body" class="table-body">
+        <div id="Test"></div>
         <div id="table-contents" class="table-contents">
 
         </div>

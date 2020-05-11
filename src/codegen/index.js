@@ -22,7 +22,7 @@ function generateClient(antiprism, isWeb) {
 					type: 'MemberExpression',
 					computed: false,
 					object: util.Identfier('antiprism'),
-					property: util.Identfier(util.providers[providerName] + 'Model')
+					property: util.Identfier(isWeb ? 'DatabaseModel' : util.providers[providerName] + 'Model')
 				},
 				body: {
 					type: 'ClassBody',
@@ -32,6 +32,8 @@ function generateClient(antiprism, isWeb) {
 						model.getModelGetFunction(providerName, m, params),
 						model.getModelUpdateFunction(providerName, m),
 						model.getModelDeleteFunction(providerName, m),
+						model.getApplySets(),
+						model.getIdentWhereParams(m, params),
 						...params.flatMap(p => model.getFieldGetterAndSetter(providerName, p))
 					]
 				}
@@ -53,7 +55,7 @@ function generateClient(antiprism, isWeb) {
 			],
 			kind: 'const'
 		});
-		toCode.body.push(provider.getModelWebProvider())
+		toCode.body.push(provider.getModelWebProvider('HttpProvider'), provider.getModelWebProvider('WsProvider'))
 	} else {
 		toCode.body.push(
 			{

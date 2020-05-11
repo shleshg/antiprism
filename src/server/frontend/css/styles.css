@@ -82,7 +82,7 @@ body {
     width: 100%;
     height: calc(100% - 40px);
     overflow-y: auto;
-    background-color: #CFCFCF
+    background-color: #CFCFCF;
 }
 
 .row {
@@ -92,6 +92,24 @@ body {
     flex-direction: row;
     border-bottom: 1px solid;
     align-items: center;
+}
+
+.row-enter {
+    animation-name: enter;
+    animation-duration: 1.5s;
+    animation-iteration-count: 1;
+}
+
+.row-update {
+    animation-name: update;
+    animation-duration: 1.5s;
+    animation-iteration-count: 1;
+}
+
+.row-delete {
+    animation-name: delete;
+    animation-duration: 1.5s;
+    animation-iteration-count: 1;
 }
 
 .row:hover {
@@ -176,4 +194,35 @@ body {
 
 .dialog-two-button {
     width: 50%;
+}
+
+input:invalid {
+    border-color: red;
+}
+
+@keyframes enter {
+    0% {
+        background-color: #001F3F;
+    }
+    100% {
+        background-color: #CFCFCF;
+    }
+}
+
+@keyframes update {
+    0% {
+        background-color: #10AF3F;
+    }
+    100% {
+        background-color: #CFCFCF;
+    }
+}
+
+@keyframes delete {
+    0% {
+        background-color: #D01F3F;
+    }
+    100% {
+        background-color: #CFCFCF;
+    }
 }

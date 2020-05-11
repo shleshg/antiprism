@@ -6,21 +6,22 @@ let subId = 0;
 class WsProvider extends db.DatabaseProvider {
 	constructor(user, password, database, port, models, url) {
 		super(models);
-		this.url = document.location.host + '/connect';
+		this.url = 'ws://' + document.location.host + '/connect';
 		this.opened = false;
 		this.callbacks = new Map();
 		this.subCallbacks = new Map();
-		this.initConnection();
 	}
 
 	initConnection() {
+		console.log('init conn');
 		this.connection = new WebSocket(this.url);
 		this.connection.onopen = this.onopen.bind(this);
 		this.connection.onclose = this.onclose.bind(this);
 		this.connection.onerror = this.onerror.bind(this);
 		this.connection.onmessage = (msg) => {
 			const res = JSON.parse(msg.data);
-			if (res.method === 'subUpdate') {
+			console.log(res);
+			if (res.method === 'event') {
 				if (!this.subCallbacks.has(res.id)) {
 					console.log('unknown sub id', res);
 					return;
@@ -37,20 +38,23 @@ class WsProvider extends db.DatabaseProvider {
 	}
 
 	onopen() {
+		console.log('open conn');
 		this.opened = true;
 	}
 
 	onclose() {
+		console.log('close conn');
 		this.opened = false;
 		this.initConnection();
 	}
 
 	onerror(err) {
 		console.log('ws err', err);
+		// setTimeout(this.initConnection.bind(this), 300);
 	}
 
 	connect() {
-
+		this.initConnection();
 	}
 
 	disconnect() {
@@ -68,6 +72,10 @@ class WsProvider extends db.DatabaseProvider {
 		if (!this.validateGets(model, fields)) {
 			throw new Error('invalid params');
 		}
+		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
+			throw new Error('invalid where');
+		}
+		where = where ? where.toObject() : null;
 		return this.exec('get', model, {fields: fields, where: where, group: group, sort: sort});
 	}
 
@@ -75,17 +83,31 @@ class WsProvider extends db.DatabaseProvider {
 		if (!this.validateSets(model, sets)) {
 			throw new Error('invalid params');
 		}
-		return this.exec('update', model, {sets: sets});
+		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
+			throw new Error('invalid where');
+		}
+		where = where ? where.toObject() : null;
+		return this.exec('update', model, {where: where, sets: sets.map(s => s.toObject())});
 	}
 
 	async deleteModels(model, where) {
+		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
+			throw new Error('invalid where');
+		}
+		where = where ? where.toObject() : null;
 		return this.exec('delete', model, {where: where});
 	}
 
 	async subscribeModels(model, callback) {
 		const idToSub = ++subId;
 		this.subCallbacks.set(idToSub, callback);
-		return this.exec('subscribe', model, {id: idToSub});
+		await this.exec('subscribe', model, {id: idToSub});
+		return idToSub;
+	}
+
+	async unsubscribeModels(model, id) {
+		await this.exec('unsubscribe', model, {id: id});
+		this.subCallbacks.set(id, null);
 	}
 
 	async exec(method, model, data) {
@@ -110,3 +132,5 @@ class WsProvider extends db.DatabaseProvider {
 		await callbackWait;
 	}
 }
+
+module.exports = WsProvider;

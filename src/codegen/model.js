@@ -142,6 +142,41 @@ function getFieldGetterAndSetter(providerName, name) {
 	]
 }
 
+function dateConstructing(model, params) {
+	const toConstruct = [];
+	let ind = 0;
+	for (const prop in model.fields) {
+		if (model.fields[prop].typeName === 'DateTime') {
+			toConstruct.push(ind);
+		}
+		ind++;
+	}
+	return toConstruct.map(d => {
+		return {
+			type: 'IfStatement',
+			test: {
+				type: 'BinaryExpression',
+				operator: '!==',
+				left: util.Identfier(params[d]),
+				right: util.Identfier('null')
+			},
+			consequent: {
+				type: 'ExpressionStatement',
+				expression: {
+					type: 'AssignmentExpression',
+					operator: '=',
+					left: util.Identfier(params[d]),
+					right: {
+						type: 'NewExpression',
+						callee: util.Identfier('Date'),
+						arguments: [util.Identfier(params[d])]
+					}
+				}
+			}
+		}
+	})
+}
+
 function getModelConstructor(providerName, model, params) {
 	return {
 		type: 'MethodDefinition',
@@ -184,6 +219,7 @@ function getModelConstructor(providerName, model, params) {
 							]
 						}
 					},
+					...dateConstructing(model, params),
 					{
 						type: 'ExpressionStatement',
 						expression: {
@@ -574,11 +610,36 @@ function getModelUpdateFunction(providerName, model) {
 										name: 'sets'
 									},
 									{
-										type: 'ArrayExpression',
-										elements: []
+										type: 'CallExpression',
+										callee: {
+											type: 'MemberExpression',
+											computed: false,
+											object: {
+												type: 'ThisExpression'
+											},
+											property: util.Identfier('identWhereParams')
+										},
+										arguments: []
 									}
 								]
 							}
+						}
+					},
+					{
+						type: 'ExpressionStatement',
+						expression: {
+							type: 'CallExpression',
+							callee: {
+								type: 'MemberExpression',
+								computed: false,
+								object: {
+									type: 'ThisExpression'
+								},
+								property: util.Identfier('applySets')
+							},
+							arguments: [
+								util.Identfier('sets')
+							]
 						}
 					}
 				]
@@ -639,8 +700,16 @@ function getModelDeleteFunction(providerName, model) {
 										raw: '\'' + model.name + '\''
 									},
 									{
-										type: 'ArrayExpression',
-										elements: []
+										type: 'CallExpression',
+										callee: {
+											type: 'MemberExpression',
+											computed: false,
+											object: {
+												type: 'ThisExpression'
+											},
+											property: util.Identfier('identWhereParams')
+										},
+										arguments: []
 									}
 								]
 							}
@@ -657,9 +726,213 @@ function getModelDeleteFunction(providerName, model) {
 	};
 }
 
+function getApplySets() {
+	return {
+		type: 'MethodDefinition',
+		key: util.Identfier('applySets'),
+		computed: false,
+		value: {
+			type: 'FunctionExpression',
+			id: null,
+			params: [
+				util.Identfier('sets')
+			],
+			body: {
+				type: 'BlockStatement',
+				body: [
+					{
+						type: 'ExpressionStatement',
+						expression: {
+							type: 'CallExpression',
+							callee: {
+								type: 'MemberExpression',
+								computed: false,
+								object: util.Identfier('sets'),
+								property: util.Identfier('map')
+							},
+							arguments: [
+								{
+									type: 'ArrowFunctionExpression',
+									id: null,
+									params: [
+										util.Identfier('s')
+									],
+									body: {
+										type: 'BlockStatement',
+										body: [
+											{
+												type: 'ExpressionStatement',
+												expression: {
+													type: 'AssignmentExpression',
+													operator: '=',
+													left: {
+														type: 'MemberExpression',
+														computed: true,
+														object: {
+															type: 'MemberExpression',
+															computed: false,
+															object: {
+																type: 'ThisExpression'
+															},
+															property: util.Identfier('_value')
+														},
+														property: {
+															type: 'MemberExpression',
+															computed: false,
+															object: util.Identfier('s'),
+															property: util.Identfier('name')
+														}
+													},
+													right: {
+														type: 'MemberExpression',
+														computed: false,
+														object: util.Identfier('s'),
+														property: util.Identfier('value')
+													}
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					},
+				]
+			}
+		}
+	}
+}
+
+function getIdentWhereParams(model, params) {
+	if (model.pk && model.pk.length !== 0) {
+		params = model.pk;
+	} else if (model.indices && model.indices.length !== 0) {
+		params = model.indices[0];
+	}
+	const conds = params.map(p => {
+		return {
+			type: 'NewExpression',
+			callee: {
+				type: 'MemberExpression',
+				computed: false,
+				object: util.Identfier('antiprism'),
+				property: util.Identfier('WhereCondition')
+			},
+			arguments: [
+				{
+					type: 'MemberExpression',
+					computed: false,
+					object: {
+						type: 'ThisExpression'
+					},
+					property: util.Identfier('_provider')
+				},
+				util.Literal('binary'),
+				util.Literal('=='),
+				{
+					type: 'ArrayExpression',
+					elements: [
+						{
+							type: 'ObjectExpression',
+							properties: [
+								{
+									type: 'Property',
+									key: util.Identfier('type'),
+									computed: false,
+									value: util.Literal('Field')
+								},
+								{
+									type: 'Property',
+									key: util.Identfier('value'),
+									computed: false,
+									value: util.Literal(p)
+								}
+							]
+						},
+						{
+							type: 'ObjectExpression',
+							properties: [
+								{
+									type: 'Property',
+									key: util.Identfier('type'),
+									computed: false,
+									value: util.Literal('Literal')
+								},
+								{
+									type: 'Property',
+									key: util.Identfier('value'),
+									computed: false,
+									value: {
+										type: 'MemberExpression',
+										computed: false,
+										object: {
+											type: 'ThisExpression',
+										},
+										property: util.Identfier(p)
+									}
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	});
+	return {
+		type: 'MethodDefinition',
+		key: util.Identfier('identWhereParams'),
+		computed: false,
+		value: {
+			type: 'FunctionExpression',
+			id: null,
+			params: [],
+			body: {
+				type: 'BlockStatement',
+				body: [
+					{
+						type: 'ReturnStatement',
+						argument: params.length === 1 ? conds[0] : conds.slice(1).reduce((prev, current) => {
+							return {
+								type: 'NewExpression',
+								callee: {
+									type: 'MemberExpression',
+									computed: false,
+									object: util.Identfier('antiprism'),
+									property: util.Identfier('WhereCondition')
+								},
+								arguments: [
+									{
+										type: 'MemberExpression',
+										computed: false,
+										object: {
+											type: 'ThisExpression'
+										},
+										property: util.Identfier('_provider')
+									},
+									util.Literal('binary'),
+									util.Literal('&&'),
+									{
+										type: 'ArrayExpression',
+										elements: [
+											current,
+											prev
+										]
+									}
+								]
+							}
+						}, conds[0])
+					}
+				]
+			}
+		}
+	};
+}
+
 exp.getFieldGetterAndSetter = getFieldGetterAndSetter;
-exp.getModelConstructor  = getModelConstructor;
+exp.getModelConstructor = getModelConstructor;
 exp.getModelCreateFunction = getModelCreateFunction;
 exp.getModelGetFunction = getModelGetFunction;
 exp.getModelUpdateFunction = getModelUpdateFunction;
 exp.getModelDeleteFunction = getModelDeleteFunction;
+exp.getApplySets = getApplySets;
+exp.getIdentWhereParams = getIdentWhereParams;

@@ -8,6 +8,9 @@ database = "test_promoters"
 model test {
 a Int
 b Float
+c String?
+d Boolean?
+e DateTime?
 }
 
 

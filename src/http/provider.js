@@ -27,6 +27,10 @@ class HttpProvider extends db.DatabaseProvider {
 		if (!this.validateGets(model, fields)) {
 			throw new Error('invalid params');
 		}
+		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
+			throw new Error('invalid where');
+		}
+		where = where ? where.toObject() : null;
 		const res = await this.exec('get', {model: model, fields: fields, where: where, group: group, sort: sort});
 		return res.result;
 	}
@@ -35,11 +39,19 @@ class HttpProvider extends db.DatabaseProvider {
 		if (!this.validateSets(model, sets)) {
 			throw new Error('invalid params');
 		}
-		const res = await this.exec('update', {model: model, sets: sets});
+		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
+			throw new Error('invalid where');
+		}
+		where = where ? where.toObject() : null;
+		const res = await this.exec('update', {model: model, where: where, sets: sets.map(s => s.toObject())});
 		return res.result;
 	}
 
 	async deleteModels(model, where) {
+		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
+			throw new Error('invalid where');
+		}
+		where = where ? where.toObject() : null;
 		const res = await this.exec('delete', {model: model, where: where});
 		return res.result;
 	}

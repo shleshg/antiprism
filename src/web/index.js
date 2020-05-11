@@ -11,3 +11,5 @@ exports.HttpProvider = http.HttpProvider;
 exports.HttpModel = http.HttpModel;
 exports.PostData = http.PostData;
 exports.fetchConfig = http.fetchConfig;
+exports.WsProvider = ws.WsProvider;
+exports.WsModel = ws.WsModel;

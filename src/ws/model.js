@@ -16,6 +16,12 @@ class WsModel extends db.DatabaseModel {
 	async delete() {
 		assert.ok(false, 'unimplemented delete');
 	}
+	identWhereParams() {
+		assert(false, 'unimplemented ident where params');
+	}
+	applySets() {
+		assert(false, 'unimplemented apply sets');
+	}
 }
 
 module.exports = WsModel;

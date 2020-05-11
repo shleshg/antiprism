@@ -16,6 +16,12 @@ class HttpModel extends db.DatabaseModel {
 	async delete() {
 		assert(false, 'unimplemented delete');
 	}
+	identWhereParams() {
+		assert(false, 'unimplemented ident where params');
+	}
+	applySets() {
+		assert(false, 'unimplemented apply sets');
+	}
 }
 
 module.exports = HttpModel;

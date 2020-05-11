@@ -156,12 +156,12 @@ function getModelAssignment(name) {
 	}
 }
 
-function getModelWebProvider() {
+function getModelWebProvider(providerName) {
 	return {
 		type: 'FunctionDeclaration',
 		id: {
 			type: 'Identifier',
-			name: 'NewProvider'
+			name: 'New' + providerName
 		},
 		params: [
 			util.Identfier('config')
@@ -224,7 +224,7 @@ function getModelWebProvider() {
 									type: 'MemberExpression',
 									computed: false,
 									object: util.Identfier('antiprism'),
-									property: util.Identfier('HttpProvider')
+									property: util.Identfier(providerName)
 								},
 								arguments: ['user', 'password', 'database', 'port'].map(a => {
 									return {

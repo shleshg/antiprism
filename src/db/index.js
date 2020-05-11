@@ -39,7 +39,7 @@ class DatabaseProvider {
 		return sets.map(f =>  this.validateSetParameter(model, f.name, f.value)).reduce((prev, cur) => prev && cur, true);
 	}
 	validateWheres(model, wheres) {
-		return wheres.map(w => this.validateWhereParameter(model, w.opType, w.op, w.first, w.second)).reduce((prev, cur) => prev && cur, true);
+		return wheres.map(w => this.validateWhereParameter(model, w.opType, w.op, w.args)).reduce((prev, cur) => prev && cur, true);
 	}
 	validateGetParameter(model, param) {
 		let value;
@@ -68,15 +68,15 @@ class DatabaseProvider {
 				if (prop === name) {
 					const typeName = this._models[model].fields[name].typeName.toLowerCase();
 					if (typeName === 'int') {
-						assert(value instanceof Number || typeof value === 'number', '');
+						assert(value ===null || value instanceof Number || typeof value === 'number', '');
 					} else if (typeName === 'float') {
-						assert(value instanceof Number || typeof value === 'number', '');
+						assert(value ===null || value instanceof Number || typeof value === 'number', '');
 					} else if (typeName === 'string') {
-						assert(value instanceof String || typeof value === 'string', '');
+						assert(value ===null || value instanceof String || typeof value === 'string', '');
 					} else if (typeName === 'datetime') {
-						assert(value instanceof Date, '');
+						assert(value ===null || value instanceof Date, '');
 					} else if (typeName === 'boolean') {
-						assert(value instanceof Boolean || typeof value === 'boolean', '');
+						assert(value ===null || value instanceof Boolean || typeof value === 'boolean', '');
 					} else {
 						assert(false, 'unknown type');
 					}
@@ -86,13 +86,17 @@ class DatabaseProvider {
 		}
 		return false;
 	}
-	validateWhereParameter(model, opType, op, first, second) {
-		if (opType === 'unary') {
-
-		} else {
-
-		}
-		return true;
+	validateWhereParameter(model, opType, op, args) {
+		return args.map(a => {
+			if (a instanceof WhereCondition) {
+				return this.validateWhereParameter(model, a.opType, a.op, a.args);
+			}
+			if (a.type === 'Field') {
+				return this._models[model].fields.hasOwnProperty(a.value);
+			}
+			return true;
+			// type checks
+		}).reduce((prev, curr) => prev && curr, true);
 	}
 }
 
@@ -103,6 +107,9 @@ class DatabaseModel {
 		this._provider = provider;
 		this._model = model;
 	}
+	static createModel() {
+		assert(false, 'unimplemented create model');
+	}
 	static getModels() {
 		assert(false, 'unimplemented get models');
 	}
@@ -111,6 +118,12 @@ class DatabaseModel {
 	}
 	delete() {
 		assert(false, 'unimplemented delete');
+	}
+	applySets() {
+		assert(false, 'unimplemented apply sets');
+	}
+	identWhereParams() {
+		assert(false, 'unimplemented ident where params');
 	}
 }
 
@@ -131,39 +144,116 @@ class SetParameter {
 	constructor(provider, name, value) {
 		assert(provider instanceof DatabaseProvider, 'expected provider to be DatabaseProvider instance');
 		this.provider = provider;
-		this.name = name;
-		this.value = value;
+		if (name instanceof Object && name.hasOwnProperty('name')) {
+			this.fromObject(name);
+		} else {
+			this.name = name;
+			this.value = value;
+		}
+	}
+	fromObject(obj) {
+		this.name = obj.name;
+		if (obj.value && obj.value.isDate) {
+			this.value = new Date(obj.value.value);
+		} else {
+			this.value = obj.value;
+		}
 	}
 	toObject() {
-		return {
-			name: this.name,
-			value: this.value
+		if (this.value instanceof Date) {
+			return {
+				name: this.name,
+				value: {
+					isDate: true,
+					value: this.value.toUTCString()
+				}
+			}
+		} else {
+			return {
+				name: this.name,
+				value: this.value
+			}
 		}
 	}
 }
 
+const whereUnaryOps = {
+	'NOT': '!'
+};
+
+const whereBinaryOps = {
+	'AND': '&&',
+	'OR': '||',
+	'EQUAL': '==',
+	'LESS': '<',
+	'ELESS': '<=',
+	'GREATER': '>',
+	'EGREATER': '>='
+};
+
 class WhereCondition {
-	constructor(provider, opType, op, first, second) {
+	constructor(provider, opType, op, args) {
 		assert(provider instanceof DatabaseProvider, 'expected provider to be DatabaseProvider instance');
-		assert(opType === 'unary' || opType === 'binary', 'expected opType to be unary or binary');
-		assert(op === '=' || op === '!' || op === '>' || op === '<' || op === '>=' || op === '<=', 'unexpected op');
-		assert(first.type === 'Literal' || first.type === 'Identifier', 'first type missing');
-		assert(second.type === 'Literal' || second.type === 'Identifier', 'second type missing');
-		assert(first.hasOwnProperty('value'), 'first value missing');
-		assert(second.hasOwnProperty('value'), 'second value missing');
 		this.provider = provider;
-		this.opType = opType;
-		this.op = op;
-		this.first = first;
-		this.second = second;
+		if (opType instanceof Object && opType.opType) {
+			this.fromObject(opType);
+		} else {
+			assert(opType === 'unary' || opType === 'binary', 'expected opType to be unary or binary');
+			if (opType === 'unary') {
+				assert(op === '!', 'unexpected unary op');
+			} else {
+				assert(op === '&&' || op === '||' || op === '==' || op === '<' || op === '<=' || op === '>' || op === '>=', 'unexpected binary op');
+			}
+			args.forEach(a => {
+				assert(a instanceof WhereCondition || a.type === 'Literal' || a.type === 'Field');
+				if (a.type === 'Literal' || a.type === 'Field') {
+					assert(a.hasOwnProperty('value'), 'expected value for literal or field');
+				}
+			});
+			this.opType = opType;
+			this.op = op;
+			this.args = args;
+		}
+	}
+	fromObject(obj) {
+		this.opType = obj.opType;
+		this.op = obj.op;
+		this.args = obj.args.map(a => {
+			if (a.hasOwnProperty('type')) {
+				if (a.type === 'Literal' && a.value && a.value.isDate) {
+					return {
+						type: a.type,
+						value: new Date(a.value.value)
+					};
+				} else {
+					return {
+						type: a.type,
+						value: a.value
+					};
+				}
+			} else {
+				return new WhereCondition(this.provider, a);
+			}
+		});
 	}
 	toObject() {
 		return {
 			opType: this.opType,
 			op: this.op,
-			first: this.first,
-			second: this.second
-		}
+			args: this.args.map(a => {
+				if (a.value instanceof Date) {
+					return {
+						type: 'Literal',
+						value: {
+							isDate: true,
+							value: a.value.toUTCString()
+						}
+					}
+				} else {
+					return a instanceof WhereCondition ? a.toObject() : a;
+				}
+			})
+		};
 	}
 }
 
