@@ -41,6 +41,12 @@ class DatabaseProvider {
 	validateWheres(model, wheres) {
 		return wheres.map(w => this.validateWhereParameter(model, w.opType, w.op, w.args)).reduce((prev, cur) => prev && cur, true);
 	}
+	validateSorts(model, sorts) {
+		return sorts.map(s => this.validateSortParameter(model, s.name)).reduce((prev, cur) => prev && cur, true);
+	}
+	validateGroupings(model, groups) {
+		return groups.map(g => this.validateGroupingParameter(model, g)).reduce((prev, cur) => prev && cur, true);
+	}
 	validateGetParameter(model, param) {
 		let value;
 		if (param instanceof String || typeof param === 'string') {
@@ -98,6 +104,36 @@ class DatabaseProvider {
 			// type checks
 		}).reduce((prev, curr) => prev && curr, true);
 	}
+	validateSortParameter(model, name) {
+		for (let prop in this._models[model].fields) {
+			if (Object.prototype.hasOwnProperty.call(this._models[model].fields, prop)) {
+				if (prop === name) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	validateGroupingParameter(model, param) {
+		let value;
+		if (param instanceof String || typeof param === 'string') {
+			value = param;
+		} else if (param instanceof SortParameter) {
+			value = param.name;
+		} else if (param instanceof Object && param.hasOwnProperty('name')) {
+			value = param.name;
+		} else {
+			assert(false, 'grouping parameter unknown type');
+		}
+		for (let prop in this._models[model].fields) {
+			if (Object.prototype.hasOwnProperty.call(this._models[model].fields, prop)) {
+				if (prop === value) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }
 
 class DatabaseModel {
@@ -127,15 +163,39 @@ class DatabaseModel {
 	}
 }
 
+const aggregateFunctions = {
+	'sum': 'sum',
+	'avg': 'avg'
+};
+
 class GetParameter {
-	constructor(provider, name) {
+	constructor(provider, name, operation, as) {
 		assert(provider instanceof DatabaseProvider, 'expected provider to be DatabaseProvider instance');
 		this.provider = provider;
-		this.name = name;
+		if (name instanceof Object && name.name) {
+			this.fromObject(name);
+		} else {
+			this.name = name;
+			if (operation) {
+				assert(aggregateFunctions[operation], 'unexpected function on values');
+				this.operation = operation;
+			}
+			if (as) {
+				assert(typeof as === 'string', 'expected as to be string');
+				this.as = as;
+			}
+		}
+	}
+	fromObject(obj) {
+		this.name = obj.name;
+		this.operation = obj.operation;
+		this.as = obj.as;
 	}
 	toObject() {
 		return {
-			name: this.name
+			name: this.name,
+			operation: this.operation,
+			as: this.as
 		}
 	}
 }
@@ -257,25 +317,58 @@ class WhereCondition {
 	}
 }
 
-class SortCondition {
-	constructor(provider, name) {
+class SortParameter {
+	constructor(provider, name, sortType) {
 		assert(provider instanceof DatabaseProvider, 'expected provider to be DatabaseProvider instance');
 		this.provider = provider;
-		this.name = name;
+		if (name instanceof Object && name.name) {
+			this.fromObject(name);
+		} else {
+			this.name = name;
+			if (sortType) {
+				assert(sortType === 'desc' || sortType === 'asc');
+				this.sortType = sortType;
+			} else {
+				this.sortType = 'asc';
+			}
+		}
+	}
+	fromObject(obj) {
+		this.name = obj.name;
+		this.sortType = obj.sortType;
+	}
+	toObject() {
+		return {
+			name: this.name,
+			sortType: this.sortType
+		}
 	}
 }
 
-class GroupingCondition {
-	constructor(provider) {
+class GroupingParameter {
+	constructor(provider, name) {
 		assert(provider instanceof DatabaseProvider, 'expected provider to be DatabaseProvider instance');
 		this.provider = provider;
+		if (name instanceof Object && name.name) {
+			this.fromObject(name);
+		} else {
+			this.name = name;
+		}
+	}
+	fromObject(obj) {
+		this.name = obj.name;
+	}
+	toObject() {
+		return {
+			name: this.name,
+		}
 	}
 }
 
 exports.GetParameter = GetParameter;
 exports.SetParameter = SetParameter;
 exports.WhereCondition = WhereCondition;
-exports.SortCondition = SortCondition;
-exports.GroupingCondition = GroupingCondition;
+exports.SortParameter = SortParameter;
+exports.GroupingParameter = GroupingParameter;
 exports.DatabaseProvider = DatabaseProvider;
 exports.DatabaseModel = DatabaseModel;

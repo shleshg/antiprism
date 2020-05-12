@@ -4,20 +4,26 @@ let config;
 let wsProvider;
 let provider;
 let currentModel;
-let currentModelParamNames;
+let currentModelParamNames = [];
 let objects = [];
+let fieldParams = [];
+let whereParam = null;
+let groupParams = [];
+let sortParams = [];
+let isTableTmp = false;
+let tmpParamNames = [];
 
 function fillSelector(config) {
 	const selector = document.getElementById('model-select');
 	config.models.forEach((m, index) => {
 		const res = document.createElement('option');
-		res.id = 'option' + index;
+		res.id = 'option-' + index;
 		res.value = m.name;
 		res.innerHTML = m.name;
 		res.onclick = chooseModel;
 		selector.appendChild(res);
 	});
-	document.getElementById('option0').click();
+	document.getElementById('option-0').click();
 }
 
 function getModelParams(model) {
@@ -29,7 +35,11 @@ function getModelParams(model) {
 }
 
 function getModelValues(model, object) {
-	return currentModelParamNames.map(p => object[p]);
+	if (tmpParamNames.length !== 0) {
+		return tmpParamNames.map(p => object[p]);
+	} else {
+		return currentModelParamNames.map(p => object[p]);
+	}
 }
 
 function calcText(text, fontSize) {
@@ -51,7 +61,11 @@ function calcColumnMinWidth(prop, index) {
 }
 
 function reCalcSize() {
-	currentModelParamNames.forEach((prop, index) => {
+	let params = currentModelParamNames;
+	if (tmpParamNames.length !== 0) {
+		params = tmpParamNames;
+	}
+	params.forEach((prop, index) => {
 		const pixelMin = calcColumnMinWidth(prop, index);
 		const elems = document.getElementsByClassName('col' + index);
 		for (let i = 0; i < elems.length; i++) {
@@ -78,15 +92,17 @@ async function chooseModel(ev) {
 	currentModel = model;
 	currentModelParamNames = getModelParams(model);
 	objects = [];
+	await setModelHeader(currentModelParamNames);
+}
 
+async function setModelHeader(params) {
 	if (document.getElementById('sub').innerText === 'unsub') {
 		await subscribeModels();
 	}
-
 	const contents = document.getElementById('table-contents');
 	dropAllChilds(contents);
 	dropAllChilds(document.getElementById('table-data'));
-	currentModelParamNames.forEach((prop, index) => {
+	params.forEach((prop, index) => {
 		const content = document.createElement('div');
 		content.classList.add('col', 'col' + index);
 		content.style.fontSize = font;
@@ -102,9 +118,15 @@ function reRender() {
 	objects.forEach((o, index) => {
 		const elem = document.createElement('div');
 		elem.id = 'row' + index;
-		elem.onclick = openDialog.bind(null, 'item', index);
+		if (!isTableTmp) {
+			elem.onclick = openDialog.bind(null, 'item', index);
+		}
 		elem.classList.add('row');
-		currentModelParamNames.forEach((p, index) => {
+		let params = currentModelParamNames;
+		if (tmpParamNames.length !== 0) {
+			params = tmpParamNames;
+		}
+		params.forEach((p, index) => {
 			const property = document.createElement('div');
 			property.classList.add('col', 'col'+ index);
 			const value = o[p];
@@ -132,109 +154,25 @@ function deleteRowAnimation(index) {
 	row.classList.add('row-delete');
 }
 
-function addButtons(elem, names, callbacks) {
-	names.forEach((n, ind) => {
-		const div = document.createElement('div');
-		div.classList.add(names.length === 1 ? 'dialog-single-button' : 'dialog-two-button');
-		div.innerText = n;
-		div.onclick = callbacks[ind];
-		elem.appendChild(div);
-	})
-}
-
-function addFields(elem, names, values) {
-	names.forEach((n, index) => {
-		const div = document.createElement('div');
-		div.classList.add('dialog-field');
-		const fieldName = document.createElement('span');
-		fieldName.innerText = n;
-		const input = document.createElement('input');
-		input.id = 'input-' + n;
-		const typeName = currentModel.fields[n].typeName;
-		switch (typeName) {
-			case "Int":
-				input.type = 'number';
-				input.pattern = '\d+';
-				break;
-			case "Float":
-				input.type = 'float';
-				input.pattern = '[+-]?([0-9]*[.])?[0-9]+';
-				break;
-			case "DateTime":
-				input.type = 'datetime-local';
-				break;
-			case 'String':
-				input.type = 'text';
-				break;
-			case 'Boolean':
-				input.type = 'checkbox';
-				break;
-		}
-		if (values && values[index] !== null) {
-			if (typeName === 'DateTime') {
-				input.value = values[index].toISOString().slice(0,16);
-			} else if (typeName === 'Boolean') {
-				input.checked = values[index];
-			} else {
-				input.value = values[index];
-			}
-		}
-		div.appendChild(fieldName);
-		div.appendChild(input);
-		if (!currentModel.fields[n].notNull) {
-			const isNullName = document.createElement('span');
-			isNullName.innerText = 'isNull';
-			const isNull = document.createElement('input');
-			isNull.id = 'input-' + n + '-null';
-			isNull.type = 'checkbox';
-			if (values && values[index] === null) {
-				isNull.checked = true;
-			}
-			div.appendChild(isNullName);
-			div.appendChild(isNull);
-		}
-		elem.appendChild(div);
-	})
-}
-
-function openDialog(operation, index) {
-	const elems = document.getElementsByClassName('dialog-background-back');
-	for (let i = 0; i < elems.length; i++) {
-		elems[i].classList.replace('dialog-background-back', 'dialog-background-front')
-	}
-	if (operation === 'insert') {
-		addButtons(document.getElementById('dialog-control'), ['insert'], [insertModel]);
-		addFields(document.getElementById('dialog-body'), currentModelParamNames);
-	} else if (operation === 'delete') {
-		addButtons(document.getElementById('dialog-control'), ['delete']);
-	} else if (operation === 'item') {
-		addButtons(document.getElementById('dialog-control'), ['update', 'delete'], [updateModel.bind(null, index), deleteModel.bind(null, index)]);
-		addFields(document.getElementById('dialog-body'), currentModelParamNames, getModelValues(currentModel, objects[index]))
-	} else if (operation === 'where') {
-		addButtons(document.getElementById('dialog-control'), ['ok']);
-	} else if (operation === 'sort') {
-		addButtons(document.getElementById('dialog-control'), ['ok']);
-	}
-}
-
-function closeDialog() {
-	console.log('click back');
-	const elems = document.getElementsByClassName('dialog-background-front');
-	for (let i = 0; i < elems.length; i++) {
-		elems[i].classList.replace('dialog-background-front', 'dialog-background-back')
-	}
-	dropAllChilds(document.getElementsByClassName('dialog-body')[0]);
-	dropAllChilds(document.getElementsByClassName('dialog-control')[0]);
-}
-
-function handleDialog(event) {
-	console.log('click dialog');
-	event.stopPropagation();
-}
-
 async function getModels() {
-	const res = await AllModels[currentModel.name].getModels(provider, currentModelParamNames);
-	objects = res;
+	getFieldsParam();
+	isTableTmp = fieldParams.reduce((prev, current) => prev || current.as, false);
+	const noTmp = fieldParams.length === currentModelParamNames.length &&
+		fieldParams.reduce((prev, current, index) => prev && (!current.operation && !current.as && current.name === currentModelParamNames[index]), true);
+	if (isTableTmp || !noTmp) {
+		isTableTmp = true;
+	} else {
+		tmpParamNames = [];
+		isTableTmp = false;
+	}
+	if (isTableTmp) {
+		objects = await provider.getModels(currentModel.name, fieldParams, whereParam, groupParams, sortParams);
+		await setModelHeader(tmpParamNames);
+	} else {
+		objects = await AllModels[currentModel.name].getModels(provider, fieldParams, whereParam, groupParams, sortParams);
+		await setModelHeader(currentModelParamNames);
+	}
+	closeDialog();
 	reRender();
 	objects.forEach((o, index) => {
 		addRowAnimation(index);

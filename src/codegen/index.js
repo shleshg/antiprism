@@ -22,7 +22,7 @@ function generateClient(antiprism, isWeb) {
 					type: 'MemberExpression',
 					computed: false,
 					object: util.Identfier('antiprism'),
-					property: util.Identfier(isWeb ? 'DatabaseModel' : util.providers[providerName] + 'Model')
+					property: util.Identfier('DatabaseModel')
 				},
 				body: {
 					type: 'ClassBody',

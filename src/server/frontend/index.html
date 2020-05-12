@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body onload="load()">
+<script src="/js/dialog.js"></script>
 <script src="/js/subscribe.js"></script>
 <script src="/js/index.js"></script>
 <div class="dialog-background dialog-background-back" onclick="closeDialog()">
@@ -31,10 +32,10 @@
         <div id="sort" onclick="openDialog('sort')">
             sort
         </div>
-        <div id="group">
+        <div id="group" onclick="openDialog('group')">
             group
         </div>
-        <div id="get" onclick="getModels()">
+        <div id="get" onclick="openDialog('get')">
             get
         </div>
         <div id="sub" onclick="subscribeModels()">

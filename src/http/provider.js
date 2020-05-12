@@ -27,11 +27,27 @@ class HttpProvider extends db.DatabaseProvider {
 		if (!this.validateGets(model, fields)) {
 			throw new Error('invalid params');
 		}
+		console.log(fields);
+		fields = fields.map(f => {
+			if (f instanceof db.GetParameter) {
+				return f.toObject();
+			} else {
+				return {
+					name: f
+				}
+			}
+		});
+		where = where ? where.toObject() : null;
 		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
 			throw new Error('invalid where');
 		}
-		where = where ? where.toObject() : null;
-		const res = await this.exec('get', {model: model, fields: fields, where: where, group: group, sort: sort});
+		if (group && !this.validateGroupings(model, group)) {
+			throw new Error('invalid group');
+		}
+		if (sort && !this.validateSorts(model, sort)) {
+			throw new Error('invalid sort');
+		}
+		const res = await this.exec('get', {model: model, fields: fields, where: where, group: group.map(g => g.toObject()), sort: sort.map(g => g.toObject())});
 		return res.result;
 	}
 

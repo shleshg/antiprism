@@ -66,8 +66,18 @@ class PostgresqlProvider extends db.DatabaseProvider {
 		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
 			throw new Error('invalid where');
 		}
+		if (group && !this.validateGroupings(model, group)) {
+			throw new Error('invalid group');
+		}
+		if (sort && !this.validateSorts(model, sort)) {
+			throw new Error('invalid sort');
+		}
 		const params = [];
-		let cmd = 'select ' + fields.map(f => typeof f === 'string' ? f : f.name).join(',') + ' from ' + model + ' ' + (where ? ('where ' + PostgresqlProvider._whereToString(where, params)) : '') + ';';
+		let cmd = 'select ' + fields.map(f => (f.operation ? f.operation + '(' + f.name + ')': f.name) + (f.as ? ' as ' + f.as : '')).join(',') + ' from ' + model + ' ' +
+			(where ? ('where ' + PostgresqlProvider._whereToString(where, params)) : '') +
+			(group.length !== 0 ? ' group by ' + group.map(g => g.name).join(',') : '') +
+			(sort.length !== 0 ? ' order by ' + sort.map(s => s.name + ' ' + s.sortType).join(',') : '') +
+			';';
 		console.log(cmd, params);
 		const res = await this.exec(cmd, params);
 		return res.rows;

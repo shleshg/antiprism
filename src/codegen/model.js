@@ -154,12 +154,7 @@ function dateConstructing(model, params) {
 	return toConstruct.map(d => {
 		return {
 			type: 'IfStatement',
-			test: {
-				type: 'BinaryExpression',
-				operator: '!==',
-				left: util.Identfier(params[d]),
-				right: util.Identfier('null')
-			},
+			test: util.Identfier(params[d]),
 			consequent: {
 				type: 'ExpressionStatement',
 				expression: {
@@ -247,8 +242,16 @@ function getModelConstructor(providerName, model, params) {
 										},
 										computed: false,
 										value: {
-											type: 'Identifier',
-											name: p
+											type: 'ConditionalExpression',
+											test: {
+												type: 'BinaryExpression',
+												operator: '===',
+												left: util.Identfier(p),
+												right: util.Identfier('undefined')
+											},
+											consequent: util.Literal(null),
+											alternate: util.Identfier(p)
+
 										}
 									};
 								})

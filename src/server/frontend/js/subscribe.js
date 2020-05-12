@@ -2,6 +2,10 @@ let subId;
 
 async function subscribeModels() {
 	const element = document.getElementById('sub');
+	if (isTableTmp) {
+		console.log('disabled sub on tmp table');
+		return ;
+	}
 	if (element.innerText === 'sub') {
 		// sub
 		subId = await wsProvider.subscribeModels(currentModel.name, onMessage);

@@ -137,8 +137,11 @@ class HttpServer {
 				resp.result = await provider.insertModel(body.data.model, sets);
 				emitMessages(body.data.model, 'insert', body.data);
 			} else if (method === 'get') {
+				const fields = body.data.fields.map(f => new db.GetParameter(provider, f));
 				const where = body.data.where ? new db.WhereCondition(provider, body.data.where) : null;
-				resp.result = await provider.getModels(body.data.model, body.data.fields, where, body.data.group, body.data.sort);
+				const group = body.data.group.map(g => new db.GroupingParameter(provider, g));
+				const sort = body.data.sort.map(s => new db.SortParameter(provider, s));
+				resp.result = await provider.getModels(body.data.model, fields, where, group, sort);
 			} else if (method === 'update') {
 				const sets = body.data.sets.map(s => new db.SetParameter(provider, s));
 				const where = body.data.where ? new db.WhereCondition(provider, body.data.where) : null;

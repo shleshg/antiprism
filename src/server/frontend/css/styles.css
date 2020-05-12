@@ -49,6 +49,10 @@ body {
     width: 12%;
 }
 
+#sub {
+    width: 10%;
+}
+
 #get {
     width: 10%;
 }
@@ -169,6 +173,14 @@ body {
     display: flex;
     flex-direction: row;
     align-items: center;
+}
+
+.dialog-plus {
+    text-align-all: center;
+}
+
+.dialog-plus:hover {
+    background-color: #AFAFAF;
 }
 
 .dialog-control {
