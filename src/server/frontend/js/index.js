@@ -20,10 +20,9 @@ function fillSelector(config) {
 		res.id = 'option-' + index;
 		res.value = m.name;
 		res.innerHTML = m.name;
-		res.onclick = chooseModel;
 		selector.appendChild(res);
 	});
-	document.getElementById('option-0').click();
+	chooseModel();
 }
 
 function getModelParams(model) {
@@ -82,10 +81,10 @@ function dropAllChilds(tag) {
 	}
 }
 
-async function chooseModel(ev) {
-	console.log('clicked', ev.target.value);
+async function chooseModel() {
+	const value = document.getElementById('model-select').value;
 	// unsub
-	const model = config.models.find(m => m.name === ev.target.value);
+	const model = config.models.find(m => m.name === value);
 	if (!model) {
 		return;
 	}
@@ -130,7 +129,7 @@ function reRender() {
 			const property = document.createElement('div');
 			property.classList.add('col', 'col'+ index);
 			const value = o[p];
-			property.innerText = value ? value : 'null';
+			property.innerText = value !== null ? value : 'null';
 			elem.appendChild(property);
 		});
 		data.appendChild(elem);
@@ -177,51 +176,6 @@ async function getModels() {
 	objects.forEach((o, index) => {
 		addRowAnimation(index);
 	});
-}
-
-function getSets() {
-	const values = [];
-	let valid = true;
-	currentModelParamNames.forEach((p) => {
-		const input = document.getElementById('input-' + p);
-		if (!input.checkValidity()) {
-			valid = false;
-			return;
-		}
-		let value;
-		if (!currentModel.fields[p].notNull) {
-			const isNull = document.getElementById('input-' + p + '-null');
-			if (isNull.checked) {
-				values.push(null);
-				return;
-			}
-		}
-		if (currentModel.fields[p].typeName !== 'String' && input.value === '') {
-			valid = false;
-			return;
-		}
-		switch (currentModel.fields[p].typeName) {
-			case "Float":
-				values.push(Number(input.value));
-				break;
-			case "Int":
-				values.push(Number(input.value));
-				break;
-			case "DateTime":
-				values.push(new Date(input.value));
-				break;
-			case "Boolean":
-				values.push(input.checked);
-				break;
-			case "String":
-				values.push(input.value);
-				break;
-		}
-	});
-	if (!valid) {
-		return null;
-	}
-	return values;
 }
 
 async function insertModel() {

@@ -59,8 +59,68 @@ function addFields(elem, names, values) {
 			div.appendChild(isNullName);
 			div.appendChild(isNull);
 		}
+		if (currentModel.fields[n].default !== undefined) {
+			const isDefaultName = document.createElement('span');
+			isDefaultName.innerText = 'isDefault';
+			const isDefault = document.createElement('input');
+			isDefault.id = 'input-' + n + '-default';
+			isDefault.type = 'checkbox';
+			div.appendChild(isDefaultName);
+			div.appendChild(isDefault);
+		}
 		elem.appendChild(div);
 	})
+}
+
+function getSets() {
+	const values = [];
+	let valid = true;
+	currentModelParamNames.forEach((p) => {
+		const input = document.getElementById('input-' + p);
+		if (!input.checkValidity()) {
+			valid = false;
+			return;
+		}
+		if (!currentModel.fields[p].notNull) {
+			const isNull = document.getElementById('input-' + p + '-null');
+			if (isNull.checked) {
+				values.push(null);
+				return;
+			}
+		}
+		if (currentModel.fields[p].default !== undefined) {
+			const isDefault = document.getElementById('input-' + p + '-default');
+			if (isDefault.checked) {
+				values.push({isDefault: true});
+				return;
+			}
+		}
+		if (currentModel.fields[p].typeName !== 'String' && input.value === '') {
+			valid = false;
+			return;
+		}
+		switch (currentModel.fields[p].typeName) {
+			case "Float":
+				values.push(Number(input.value));
+				break;
+			case "Int":
+				values.push(Number(input.value));
+				break;
+			case "DateTime":
+				values.push(new Date(input.value));
+				break;
+			case "Boolean":
+				values.push(input.checked);
+				break;
+			case "String":
+				values.push(input.value);
+				break;
+		}
+	});
+	if (!valid) {
+		return null;
+	}
+	return values;
 }
 
 function addPlusButton(elem, callback) {

@@ -73,6 +73,10 @@ class DatabaseProvider {
 			if (Object.prototype.hasOwnProperty.call(this._models[model].fields, prop)) {
 				if (prop === name) {
 					const typeName = this._models[model].fields[name].typeName.toLowerCase();
+					if (value instanceof Object && value.isDefault !== undefined) {
+						assert(this._models[model].fields[name].default !== undefined, 'set default in non default field');
+						return true;
+					}
 					if (typeName === 'int') {
 						assert(value ===null || value instanceof Number || typeof value === 'number', '');
 					} else if (typeName === 'float') {

@@ -53,10 +53,25 @@ class PostgresqlProvider extends db.DatabaseProvider {
 		if (!this.validateSets(model, sets)) {
 			throw new Error('invalid params');
 		}
-		const params = sets.map(f => f.value);
-		const cmd = 'insert into ' + model + '(' + sets.map(f => f.name) + ')' + ' values(' + sets.map((value, index) => '$' + (index + 1).toString()) + ');';
+		const params = sets.filter(f => !f.value.isDefault).map(f => f.value);
+		const names = sets.map(f => f.name).join(',');
+		let index = 0;
+		const values = sets.map((value) => {
+			if (value.value.isDefault) {
+				return 'default'
+			} else {
+				index++;
+				return '$' + index;
+			}
+		});
+		const returnings = [];
+		for (const prop in this._models[model].fields) {
+			returnings.push(prop);
+		}
+		const cmd = 'insert into ' + model + '(' + names + ')' + ' values(' + values + ') returning ' + returnings.join(',') + ';';
 		console.log(cmd, params);
-		return this.exec(cmd, params);
+		const res = await this.exec(cmd, params);
+		return res.rows[0];
 	}
 
 	async getModels(model, fields, where, group, sort) {
@@ -116,8 +131,22 @@ class PostgresqlProvider extends db.DatabaseProvider {
 		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
 			throw new Error('invalid where');
 		}
-		const params = sets.map(s => s.value);
-		const cmd = 'update ' + model + ' set ' + sets.map((s, index) => s.name + ' = $' + (index + 1).toString()).join(',') + ' ' + (where ? ('where ' + PostgresqlProvider._whereToString(where, params)) : '') + ';';
+		// const params = sets.map(s => s.value);
+
+		const params = sets.filter(f => !f.isDefault).map(f => f.value);
+		// const names = sets.map(f => f.name).join(',');
+		let index = 0;
+		const values = sets.map((value) => {
+			const pref = 'set ' + value.name + '=';
+			if (value.isDefault) {
+				return pref + 'default'
+			} else {
+				index++;
+				return pref + '$' + index;
+			}
+		}).join(',');
+
+		const cmd = 'update ' + model + ' set ' + values + ' ' + (where ? ('where ' + PostgresqlProvider._whereToString(where, params)) : '') + ';';
 		console.log(cmd, params);
 		return this.exec(cmd, params);
 	}

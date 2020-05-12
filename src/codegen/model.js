@@ -297,65 +297,75 @@ function getModelCreateFunction(providerName, model, params) {
 				type: 'BlockStatement',
 				body: [
 					{
-						type: 'AwaitExpression',
-						argument: {
-							type: 'CallExpression',
-							callee: {
-								type: 'MemberExpression',
-								computed: false,
-								object: {
-									type: 'Identifier',
-									name: 'provider'
-								},
-								property: {
-									type: 'Identifier',
-									name: 'insertModel'
-								}
-							},
-							arguments: [
-								{
-									type: 'Literal',
-									value: model.name,
-									raw: '\'' + model.name + '\''
-								},
-								{
-									type: 'ArrayExpression',
-									elements: params.map(p => {
-										return {
-											type: 'NewExpression',
-											callee: {
-												type: 'MemberExpression',
-												computed: false,
-												object: {
-													type: 'Identifier',
-													name: 'antiprism'
-												},
-												property: {
-													type: 'Identifier',
-													name: 'SetParameter'
-												}
+						type: 'VariableDeclaration',
+						declarations: [
+							{
+								type: 'VariableDeclarator',
+								id: util.Identfier('inserted'),
+								init: {
+									type: 'AwaitExpression',
+									argument: {
+										type: 'CallExpression',
+										callee: {
+											type: 'MemberExpression',
+											computed: false,
+											object: {
+												type: 'Identifier',
+												name: 'provider'
 											},
-											arguments: [
-												{
-													type: 'Identifier',
-													name: 'provider'
-												},
-												{
-													type: 'Literal',
-													value: p,
-													raw: '\'' + p + '\''
-												},
-												{
-													type: 'Identifier',
-													name: p
-												}
-											]
-										}
-									})
-								}
-							]
+											property: {
+												type: 'Identifier',
+												name: 'insertModel'
+											}
+										},
+										arguments: [
+											{
+												type: 'Literal',
+												value: model.name,
+												raw: '\'' + model.name + '\''
+											},
+											{
+												type: 'ArrayExpression',
+												elements: params.map(p => {
+													return {
+														type: 'NewExpression',
+														callee: {
+															type: 'MemberExpression',
+															computed: false,
+															object: {
+																type: 'Identifier',
+																name: 'antiprism'
+															},
+															property: {
+																type: 'Identifier',
+																name: 'SetParameter'
+															}
+														},
+														arguments: [
+															{
+																type: 'Identifier',
+																name: 'provider'
+															},
+															{
+																type: 'Literal',
+																value: p,
+																raw: '\'' + p + '\''
+															},
+															{
+																type: 'Identifier',
+																name: p
+															}
+														]
+													}
+												})
+											}
+										]
 
-						}
+									}
+								}
+							}
+						],
+						kind: 'const'
 					},
 					{
 						type: 'ReturnStatement',
@@ -372,9 +382,11 @@ function getModelCreateFunction(providerName, model, params) {
 								},
 								...params.map(p => {
 									return {
-										type: 'Identifier',
-										name: p
-									}
+										type: 'MemberExpression',
+										computed: false,
+										object: util.Identfier('inserted'),
+										property: util.Identfier(p)
+									};
 								})
 							]
 						}
