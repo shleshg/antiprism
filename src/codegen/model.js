@@ -810,7 +810,7 @@ function getIdentWhereParams(model, params) {
 	if (model.pk && model.pk.length !== 0) {
 		params = model.pk;
 	} else if (model.indices && model.indices.length !== 0) {
-		params = model.indices[0];
+		params = model.indices[0].fields;
 	}
 	const conds = params.map(p => {
 		return {

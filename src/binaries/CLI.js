@@ -4,13 +4,37 @@ const path = require('path');
 const fs = require('fs');
 const ncp = require('ncp').ncp;
 ncp.limit = 16;
-const browserify = require('browserify');
 const parser = require('../parser');
 const utils = require('../utils');
 const codegen = require('../codegen');
 const postgresql = require('../postgresql');
 
-const antiprismPath = path.resolve(__dirname, '..', '..')
+const antiprismPath = path.resolve(__dirname, '..', '..');
+
+const optionDefinitions = [
+	{
+		name: 'input',
+		alias: 'i',
+		type: String,
+		typeLabel: '{underline file}',
+		defaultOption: true,
+		description: 'The input to process.'
+	},
+	{
+		name: 'output',
+		alias: 'o',
+		type: String,
+		typeLabel: '{underline file} or {underline dir}',
+		description: 'Output file or dir'
+	},
+	{
+		name: 'antiprism',
+		alias: 'a',
+		type: String,
+		typeLabel: '{underline antiprism file}',
+		description: 'Antiprism config file'
+	}
+];
 
 const sections = [
 	{
@@ -18,16 +42,52 @@ const sections = [
 		content: 'Database ORM, server/client generation'
 	},
 	{
-		header: 'Options',
-		optionList: [
+		header: 'Synopsis',
+		content: '$ app <options> <command>'
+	},
+	{
+		header: 'Command List',
+		content: [
 			{
-				name: 'input',
-				typeLabel: '{underline file}',
-				description: 'The input to process.'
+				name: 'help',
+				summary: 'Display this'
+			},
+			{
+				name: 'config',
+				summary: 'Process antiprism file from antiprism scheme'
+			},
+			{
+				name: 'database',
+				summary: 'insert models into database'
+			},
+			{
+				name: 'client',
+				summary: 'generate Node client'
+			},
+			{
+				name: 'web-client',
+				summary: 'generate web client script'
+			},
+			{
+				name: 'web',
+				summary: 'generate Node client'
+			},
+			{
+				name: 'generate',
+				summary: 'generate everything'
+			},
+			{
+				name: 'image',
+				summary: 'make docker image'
 			}
 		]
+	},
+	{
+		header: 'Options',
+		optionList: optionDefinitions
 	}
 ];
+
 const usage = commandLineUsage(sections);
 
 const mainDefinitions = [
@@ -36,145 +96,126 @@ const mainDefinitions = [
 const mainOptions = commandLineArgs(mainDefinitions, {stopAtFirstUnknown: true});
 const argv = mainOptions._unknown || [];
 
-const definitions = [
-	{name: 'input', alias: 'i', type: String, defaultOption: true},
-	{name: 'output', alias: 'o', type: String}
-];
+function generateConfig(input) {
+	const cfg = parser.parseFile(input);
+	utils.validateAntiprismFile(cfg);
+	utils.postProcessAntiprism(cfg);
+	return cfg;
+}
 
-if (mainOptions.command === 'parse') {
-	const parseDefinitions = definitions;
-	const parseOptions = commandLineArgs(parseDefinitions, {argv});
-	if (!parseOptions.input) {
-		console.log(usage);
-		return;
-	}
-	const res = JSON.stringify(parser.parseFile(parseOptions.input), null, '\t');
-	if (!parseOptions.output) {
-		console.log(res);
-	} else {
-		fs.writeFileSync(parseOptions.output, res);
-	}
-} else if (mainOptions.command === 'generate-database') {
-	const dbDefinitions = definitions.concat([
-		{name: 'antiprism', alias: 'a', type: String}
-	]);
-	const dbOptions = commandLineArgs(dbDefinitions, {argv});
-	if (!dbOptions.input && !dbOptions.antiprism) {
-		console.log(usage);
-		return;
-	}
-	let antiprism;
-	if (dbOptions.antiprism) {
-		antiprism = JSON.parse(fs.readFileSync(dbOptions.antiprism).toString());
-		if (!utils.validateAntiprismFile(antiprism)) {
-			console.log('wrong antiprism');
-			return;
-		}
-	} else {
-		if (!dbOptions.input) {
-			console.log('wrong input');
-			return;
-		}
-		antiprism = parser.parseFile(dbOptions.input);
-	}
-	if (antiprism.datasource.provider === 'postgresql') {
-		const pg = new postgresql.PostgresqlProvider(antiprism.datasource.user, antiprism.datasource.password,
-			antiprism.datasource.database, antiprism.datasource.port, antiprism.models);
-		const createStrings = antiprism.models.map(m => pg.modelToInitString(m));
-		pg.connect().then(res => {
-			const promises = createStrings.map(c => pg.exec(c, []));
-			Promise.all(promises)
-				.catch(err => {
-					console.log('create table err ', err);
-					return 0;
-				})
-				.then(res => {
-					return 0;
-				})
-				.finally(() => pg.disconnect())
-				.finally(() => {
-				});
-		});
-	} else {
+function generateDatabase(provider, cfg) {
+	const createStrings = cfg.models.map(m => provider.modelToInitString(m));
+	provider.connect().then(res => {
+		const promises = createStrings.map(c => provider.exec(c, []));
+		Promise.all(promises)
+			.catch(err => {
+				console.log('create table err ', err);
+				return 0;
+			})
+			.then(res => {
+				return 0;
+			})
+			.finally(() => provider.disconnect())
+			.finally(() => {
+			});
+	});
+}
 
-	}
-} else if (mainOptions.command === 'generate-client') {
-	const dbDefinitions = definitions.concat([
-		{name: 'antiprism', alias: 'a', type: String}
-	]);
-	const dbOptions = commandLineArgs(dbDefinitions, {argv});
-	if (!dbOptions.input && !dbOptions.antiprism) {
+function cfgOrInput(opts) {
+	if (!opts.input && !opts.antiprism) {
 		console.log(usage);
 		return;
 	}
-	let antiprism;
-	if (dbOptions.antiprism) {
-		antiprism = JSON.parse(fs.readFileSync(dbOptions.antiprism).toString());
-		if (!utils.validateAntiprismFile(antiprism)) {
-			console.log('wrong antiprism');
-			return;
-		}
+	let cfg;
+	if (opts.antiprism) {
+		cfg = JSON.parse(fs.readFileSync(opts.antiprism).toString());
 	} else {
-		if (!dbOptions.input) {
-			console.log('wrong input');
-			return;
-		}
-		antiprism = parser.parseFile(dbOptions.input);
+		cfg = generateConfig(opts.input);
 	}
-	if (antiprism.datasource.provider === 'postgresql') {
-		if (!dbOptions.output) {
-			console.log(codegen(antiprism));
-		} else {
-			fs.writeFileSync(dbOptions.output, codegen(antiprism));
-		}
-	} else {
+	return cfg;
+}
 
-	}
-} else if (mainOptions.command === 'generate') {
-	const dbDefinitions = definitions.concat([
-		{name: 'antiprism', alias: 'a', type: String}
-	]);
-	const dbOptions = commandLineArgs(dbDefinitions, {argv});
-	if (!dbOptions.input && !dbOptions.antiprism) {
-		console.log(usage);
-		return;
-	}
-	let antiprism;
-	if (dbOptions.antiprism) {
-		antiprism = JSON.parse(fs.readFileSync(dbOptions.antiprism).toString());
-		if (!utils.validateAntiprismFile(antiprism)) {
-			console.log('wrong antiprism');
-			return;
-		}
-	} else {
-		if (!dbOptions.input) {
-			console.log('wrong input');
-			return;
-		}
-		antiprism = parser.parseFile(dbOptions.input);
-	}
-	if (!dbOptions.output) {
-		console.log('output required');
-		return;
-	}
-	fs.writeFileSync(path.resolve(dbOptions.output, 'config.json'), JSON.stringify(antiprism, null, '\t'));
-	fs.writeFileSync(dbOptions.output + '/client.js', codegen.generateClient(antiprism, false));
+function generate(parseOptions, cfg) {
+	const clientCode = codegen.generateClient(cfg);
+	const webClientCode = codegen.generateClient(cfg, true);
+	fs.writeFileSync(path.resolve(parseOptions.output, 'config.json'), JSON.stringify(cfg, null, '\t'));
+	fs.writeFileSync(parseOptions.output + '/client.js', clientCode);
 	new Promise((resolve, reject) => {
-		ncp(path.resolve(antiprismPath, 'src', 'server', 'frontend'), path.resolve(dbOptions.output, 'frontend'), resolve)
+		ncp(path.resolve(antiprismPath, 'src', 'server', 'frontend'), path.resolve(parseOptions.output, 'frontend'), resolve)
 	}).then(err => {
 		if (err) {
 			console.log('copy err', err);
 			return null;
 		}
-		fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'config.json'), JSON.stringify(antiprism, null, '\t'));
-		fs.copyFileSync(path.resolve(antiprismPath, 'src', 'web', 'antiprism.js'), path.resolve(dbOptions.output, 'frontend', 'antiprism.js'));
-		antiprism.datasource.provider = 'http';
-		fs.writeFileSync(path.resolve(dbOptions.output, 'frontend', 'web-client.js'),
-			codegen.generateClient(antiprism, true));
-		fs.writeFileSync(path.resolve(dbOptions.output, 'server.js'), codegen.generateServer(antiprism));
+		fs.writeFileSync(path.resolve(parseOptions.output, 'frontend', 'config.json'), JSON.stringify(cfg, null, '\t'));
+		fs.copyFileSync(path.resolve(antiprismPath, 'src', 'web', 'antiprism.js'), path.resolve(parseOptions.output, 'frontend', 'antiprism.js'));
+		cfg.datasource.provider = 'http';
+		fs.writeFileSync(path.resolve(parseOptions.output, 'frontend', 'web-client.js'), webClientCode);
+		fs.writeFileSync(path.resolve(parseOptions.output, 'server.js'), codegen.generateServer(cfg));
 	}).catch((err) => {
-		console.log('catch', err)
+		console.log('catch', err);
 	});
+}
+
+const parseOptions = commandLineArgs(optionDefinitions, {argv});
+
+if (mainOptions.command === 'config') {
+	if (!parseOptions.input) {
+		console.log(usage);
+		return;
+	}
+	const cfg = generateConfig(parseOptions.input);
+	if (!parseOptions.output) {
+		console.log(cfg);
+	} else {
+		fs.writeFileSync(parseOptions.output, cfg);
+	}
+} else if (mainOptions.command === 'database') {
+	const cfg = cfgOrInput(parseOptions);
+	if (cfg.datasource.provider === 'postgresql') {
+		const pg = new postgresql.PostgresqlProvider(cfg.datasource.user, cfg.datasource.password,
+			cfg.datasource.database, cfg.datasource.port, cfg.models);
+		generateDatabase(pg, cfg);
+	}
+} else if (mainOptions.command === 'client') {
+	const cfg = cfgOrInput(parseOptions);
+	const clientCode = codegen.generateClient(cfg);
+	if (!parseOptions.output) {
+		console.log(clientCode);
+	} else {
+		fs.writeFileSync(parseOptions.output, clientCode);
+	}
+} else if (mainOptions.command === 'web-client') {
+	const cfg = cfgOrInput(parseOptions);
+	const clientCode = codegen.generateClient(cfg, true);
+	if (!parseOptions.output) {
+		console.log(clientCode);
+	} else {
+		fs.writeFileSync(parseOptions.output, clientCode);
+	}
+} else if (mainOptions.command === 'generate') {
+	if (!parseOptions.output) {
+		console.log('output required');
+		return;
+	}
+	const cfg = cfgOrInput(parseOptions);
+	if (cfg.datasource.provider === 'postgresql') {
+		const pg = new postgresql.PostgresqlProvider(cfg.datasource.user, cfg.datasource.password,
+			cfg.datasource.database, cfg.datasource.port, cfg.models);
+		generateDatabase(pg, cfg);
+	}
+	generate(parseOptions, cfg);
+} else if (mainOptions.command === 'web') {
+	if (!parseOptions.output) {
+		console.log('output required');
+		return;
+	}
+	const cfg = cfgOrInput(parseOptions);
+	generate(parseOptions, cfg);
+} else if (mainOptions.command === 'image') {
+	console.log('docker unimplemented');
+} else if (mainOptions.command === 'help') {
+	console.log(usage);
 } else {
 	console.log(usage);
 }

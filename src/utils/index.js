@@ -1,5 +1,6 @@
 const assert = require('assert').strict;
 const exp = module.exports;
+const postprocessing = require('./postprocessing');
 
 function checkUnique(models) {
 	const names = new Map();
@@ -40,10 +41,18 @@ function validateDataSource(dataSource) {
 	return true;
 }
 
-exports = validateAntiprismFile = function (antiprism) {
+exp.validateAntiprismFile = function (antiprism) {
 	return validateDataSource(antiprism.datasource) &&
 		checkUnique(antiprism.models) &&
 		antiprism.models
 		.map(m => validateModel(m))
 		.reduce((prev, current) => current && prev, true);
+};
+
+exp.postProcessAntiprism = function (antiprism) {
+	antiprism.models.forEach(m => {
+		postprocessing.getPrimaryKey(m);
+		postprocessing.getIndices(m);
+		postprocessing.getDefaults(m);
+	});
 };

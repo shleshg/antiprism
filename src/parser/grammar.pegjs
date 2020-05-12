@@ -8,10 +8,23 @@ Parameter
 	= _ name:Ident _ "=" _ value:(String / Number) {return {name: name, value: value};}
 
 Model
-	= _ "model" _ name:Ident _ "{" _ [\n] fields:((Field[\n])+) "}" {const res = {name: name, fields: {}}; fields.forEach(f => { if (res.hasOwnProperty(f[0].name)) {throw new Error('non unique field'); } res.fields[f[0].name] = f[0].type; }); return res;}
+	= _ "model" _ name:Ident _ "{" _ [\n] fields:((Field[\n])+) "}" {
+	const res = {name: name, fields: {}};
+	 fields.forEach(f => {
+	    if (res.hasOwnProperty(f[0].name)) {
+	        throw new Error('non unique field');
+	    }
+	    res.fields[f[0].name] = {};
+	    for (const prop in f[0].type) {
+	        res.fields[f[0].name][prop] = f[0].type[prop];
+	    }
+	    res.fields[f[0].name].tags = f[0].tags;
+	 });
+	 return res;
+}
 
 Field
-	= _ name:Ident _ type:Type {return {name: name, type: type}}
+	= _ name:Ident _ type:Type _ tags:((Tag _)*) {return {name: name, type: type, tags: tags.map(t => t[0])}}
 
 Type
 	= value:TypeName[?] {return {typeName: value, notNull: false};}
@@ -19,6 +32,14 @@ Type
 
 TypeName
 	= value:("Int" / "String" / "DateTime" / "Boolean" / "Float") {return value; }
+
+Tag
+	= [@]double:[@]? tagName:("relation" / "default" / "id" / "unique") tagArgs:("(" _ ("autoincrement()" / "now()" / Number / String / Boolean / TagParam) ")")? {
+	 return {isDouble: double !== null, name: tagName, args: tagArgs ? tagArgs[2] : null};
+}
+
+TagParam
+	= name:Ident ":" _ value:String {return {name: name, value: value}; }
 
 Ident
 	= value:([A-Za-z][A-Za-z0-9]*) {return text(); }
@@ -28,6 +49,9 @@ String
 
 Number
 	= value:[0-9]+ {return parseInt(text(), 10);}
+
+Boolean
+	= value:("true" / "false") {return value === 'true';}
 
 AnyWhitespace
 	= [ \t\r\n]*
