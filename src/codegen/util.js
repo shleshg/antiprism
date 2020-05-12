@@ -28,6 +28,9 @@ function requireStatement(variable, path) {
 }
 
 function modelToAst(model) {
+	if (! (model instanceof Object)) {
+		return Literal(model);
+	}
 	const res = {
 		type: 'ObjectExpression',
 		properties: []
@@ -39,7 +42,12 @@ function modelToAst(model) {
 				key: Identifier(prop),
 				computed: false
 			};
-			if (model[prop] instanceof Object) {
+			if (model[prop] instanceof Array) {
+				property.value = {
+					type: 'ArrayExpression',
+					elements: model[prop].map(e => modelToAst(e))
+				}
+			} else if (model[prop] instanceof Object) {
 				property.value = exp.modelToAst(model[prop]);
 			} else {
 				property.value = Literal(model[prop])

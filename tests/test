@@ -17,3 +17,23 @@ e DateTime?
 model test2{
   s DateTime?
 }
+
+model def {
+    id Int @id(autoincrement())
+    x Int @default(1337)
+    a Int @unique
+}
+
+model un {
+    x Int @@unique
+    y Int @@unique
+    a Int @@unique(name: "kuks")
+    b Int @@unique(name: "kuks")
+}
+
+model p {
+    x Int @@id
+    y Int @@id
+    d DateTime @default(now())
+    s String @default("default string")
+}

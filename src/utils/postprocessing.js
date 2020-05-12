@@ -9,10 +9,11 @@ function getPrimaryKey(model) {
 			if (t.name === 'id') {
 				if (!t.isDouble) {
 					if (t.args === 'autoincrement()') {
+						assert(model.fields[prop].typeName === 'Int', 'autoincrement can be only integer');
 						model.fields[prop].default = 'autoincrement()';
 					}
 					assert(singleId === null, 'multiple single id in ' + model.name);
-					singleId = prop;
+					singleId = [prop];
 				} else {
 					assert(multipleId.find(i => i === prop) === undefined, prop + ' in model ' + model.name + ' multiple times in @@id');
 					multipleId.push(prop);
@@ -21,7 +22,7 @@ function getPrimaryKey(model) {
 		});
 	}
 	assert.ok(!(singleId && multipleId.length !== 0), 'have single and multiple id');
-	model.pk = singleId !== null ? [singleId] : multipleId;
+	model.pk = singleId !== null ? singleId : multipleId;
 }
 
 function getDefaults(model) {
@@ -30,7 +31,8 @@ function getDefaults(model) {
 		tags.forEach(t => {
 			if (t.name === 'default') {
 				assert(!model.fields[prop].default, 'multiple default');
-				model.fields[prop].default = t.args instanceof Object ? t.args.value : t.args.value;
+				assert(!(model.fields[prop].typeName === 'DateTime' && t.value === 'now()'), 'default on time');
+				model.fields[prop].default = t.args instanceof Object ? t.args.value : t.args;
 			}
 		});
 	}
