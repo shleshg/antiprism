@@ -398,11 +398,13 @@ function getWhereArgValue(id) {
 
 
 function getWhereParam() {
+	console.log('kuks');
 	const param = document.getElementById('where-insert');
 	let valid = true;
 	let res;
 	if (!param) {
 		whereParam = null;
+		closeDialog();
 		return;
 	}
 	const whereValue = param.children[1];

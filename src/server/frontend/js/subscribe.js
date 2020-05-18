@@ -30,13 +30,7 @@ function onMessage(msg) {
 }
 
 function applyInsert(data) {
-	const args = currentModelParamNames.map(p => {
-		const res = data.data.sets.find(f => f.name === p);
-		if (res === undefined) {
-			return null;
-		}
-		return res;
-	});
+	const args = currentModelParamNames.map(p => data.data[p]);
 	const newModel = new AllModels[currentModel.name](provider, ...args);
 	const ind = objects.push(newModel) - 1;
 	reRender();

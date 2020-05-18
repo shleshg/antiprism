@@ -11,3 +11,16 @@ model def {
     kek String
     lol Float?
 }
+
+model un {
+    a Int @@unique
+    b Int @@unique
+    c Int @@unique(name: "keks")
+    d Int @@unique(name: "keks")
+}
+
+model mp {
+    a Int @@id
+    b Int @@id
+    c String?
+}

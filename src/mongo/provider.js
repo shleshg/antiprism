@@ -331,7 +331,6 @@ class MongoProvider extends db.DatabaseProvider {
 		}
 		const required = [];
 		const props = {};
-		// required.push('_id');
 		for (const prop in model.fields) {
 			const field = model.fields[prop];
 			if (model.pk.find(m => prop === m) !== undefined) {
@@ -365,13 +364,16 @@ class MongoProvider extends db.DatabaseProvider {
 			}
 		}
 		console.log(required, props);
+		const schema = {
+			bsonType: 'object',
+			properties: props
+		};
+		if (required.length !== 0) {
+			schema.required = required;
+		}
 		await this.client.db().createCollection(model.name, {
 			validator: {
-				$jsonSchema: {
-					bsonType: 'object',
-					required: required,
-					properties: props
-				}
+				$jsonSchema: schema
 			}
 		});
 		if (model.indices.length > 0) {
@@ -379,6 +381,7 @@ class MongoProvider extends db.DatabaseProvider {
 				return {
 					key: i.fields.reduce((prev, f) => {
 						prev[f] = 1;
+						return prev;
 					}, {}),
 					name: i.name,
 					unique: true

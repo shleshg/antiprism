@@ -135,7 +135,7 @@ class HttpServer {
 			if (method === 'insert') {
 				const sets = body.data.sets.map(s => new db.SetParameter(provider, s));
 				resp.result = await provider.insertModel(body.data.model, sets);
-				emitMessages(body.data.model, 'insert', body.data);
+				emitMessages(body.data.model, 'insert', resp.result);
 			} else if (method === 'get') {
 				const fields = body.data.fields.map(f => new db.GetParameter(provider, f));
 				const where = body.data.where ? new db.WhereCondition(provider, body.data.where) : null;
