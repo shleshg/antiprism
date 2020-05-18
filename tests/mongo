@@ -1,0 +1,13 @@
+datasource {
+provider = "mongo"
+port = 27017
+user = "dno"
+password = "1337"
+database = "antiprism"
+}
+
+model def {
+    a Int @id(autoincrement())
+    kek String
+    lol Float?
+}

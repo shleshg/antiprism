@@ -1,5 +1,6 @@
 const db = require('../db');
-const MongoClient = require('mongodb').MongoClient;
+const mongo = require('mongodb');
+const MongoClient = mongo.MongoClient;
 
 const types = {
 	'int': 'int',
@@ -12,7 +13,7 @@ const types = {
 const ops = {
 	'!': '$not',
 	'!=': '$ne',
-	'==': '$eq',
+	'==': '$match',
 	'>': '$gt',
 	'<': '$lt',
 	'>=': '$gte',
@@ -23,10 +24,18 @@ const ops = {
 	'avg': '$avg'
 };
 
+const revert = {
+	'!=': '!=',
+	'>': '<=',
+	'<': '>=',
+	'>=': '<',
+	'<=': '>'
+};
+
 class MongoProvider extends db.DatabaseProvider {
 	constructor(user, password, database, port, models) {
 		super(models);
-		const uri = "mongodb+srv://" + user + ':' + password + '@' + 'localhost:' + port + '/' + database + 'retryWrites=true&w=majority';
+		const uri = "mongodb://" + user + ':' + password + '@' + '127.0.0.1:' + port + '/' + database + '?retryWrites=true&w=majority';
 		this.client = new MongoClient(uri, {useNewUrlParser: true});
 	}
 
@@ -50,10 +59,22 @@ class MongoProvider extends db.DatabaseProvider {
 					res[model.pk[0]] = toFlat[prop];
 				}
 			} else {
-				res[prop] = toFlat[prop];
+				if (toFlat[prop] instanceof mongo.Double) {
+					res[prop] = toFlat[prop].value;
+				} else {
+					res[prop] = toFlat[prop];
+				}
 			}
 		}
 		return res;
+	}
+
+	static maybeDouble(model, name, value) {
+		if (model.fields[name].typeName.toLowerCase() === 'float') {
+			return new mongo.Double(value);
+		} else {
+			return value;
+		}
 	}
 
 	async insertModel(model, sets) {
@@ -64,7 +85,7 @@ class MongoProvider extends db.DatabaseProvider {
 		const toInsert = {};
 		for (const prop in m.fields) {
 			const field = m.fields[prop];
-			if (m.pk.find(v => v === prop)) {
+			if (m.pk.find(v => v === prop) !== undefined) {
 				if (m.pk.length === 1) {
 					if (field.default === 'autoincrement()') {
 						toInsert._id = await this.getNextSequenceValue(model);
@@ -73,29 +94,36 @@ class MongoProvider extends db.DatabaseProvider {
 					toInsert._id = {};
 					if (field.default === 'NOW()') {
 						toInsert._id[prop] = new Date();
-					} else if (field.value !== undefined) {
-						toInsert._id[prop] = field.default.value;
+					} else if (field.default !== undefined && field.default !== null) {
+						toInsert._id[prop] = MongoProvider.maybeDouble(m, prop, field.default);
 					}
 				}
 			} else {
 				if (field.default === 'NOW()') {
 					toInsert[prop] = new Date();
-				} else if (field.default.value !== undefined) {
-					toInsert[prop] = field.default.value;
+				} else if (field.default !== undefined && field.default !== null) {
+					toInsert[prop] = MongoProvider.maybeDouble(m, prop, field.default);
 				}
 			}
 		}
 		sets.forEach(s => {
 			if (m.pk.find(v => v === s.name) !== undefined) {
 				if (m.pk.length === 1) {
-					toInsert['_id'] = s.value;
+					if (s.value !== null && !s.value.isDefault) {
+						toInsert['_id'] = MongoProvider.maybeDouble(m, s.name, s.value);
+					}
 				} else {
-					toInsert._id[s.name] = s.value;
+					if (s.value !== null && !s.value.isDefault) {
+						toInsert._id[s.name] = MongoProvider.maybeDouble(m, s.name, s.value);
+					}
 				}
 			} else {
-				toInsert[s.name] = s.value;
+				if (s.value !== null && !s.value.isDefault) {
+					toInsert[s.name] = MongoProvider.maybeDouble(m, s.name, s.value);
+				}
 			}
 		});
+		console.log(toInsert);
 		try {
 			await this.client.db().collection(model).insertOne(toInsert);
 			return MongoProvider.flatId(m, toInsert);
@@ -117,40 +145,27 @@ class MongoProvider extends db.DatabaseProvider {
 		if (sort && !this.validateSorts(model, sort)) {
 			throw new Error('invalid sort');
 		}
-		let projectModified = false;
+		const aggregateParams = [];
 		const m = this._models[model];
-		const projection = {_id: 0};
-		fields.filter(f => !f.operation).forEach(f => {
-			const nameInRes = f.as ? f.as : f.name;
-			if (m.pk.find(v => v === f.name) !== undefined) {
+		if (where) {
+			aggregateParams.push({$match: MongoProvider._whereToObject(m, where)});
+		}
+		let idProjModified = false;
+		const idProjection = {_id: 0};
+		for (const prop in m.fields) {
+			if (m.pk.find(v => v === prop) !== undefined) {
 				if (m.pk.length === 1) {
-					projection[nameInRes] = '_id';
+					idProjection[prop] = '$_id';
 				} else {
-					projection[nameInRes] = '_id.' + f.name;
+					idProjection[prop] = '$_id.' + prop;
 				}
 			} else {
-				projection[nameInRes] = 1;
+				idProjection[prop] = 1;
 			}
-			projectModified = true;
-		});
-		const aggregateParams = [];
-		if (where) {
-			aggregateParams.push({$match: MongoProvider._whereToObject(where)});
+			idProjModified = true;
 		}
-		if (group.length !== 0) {
-			const groupParam = {_id: {}};
-			group.forEach(g => {
-				if (m.pk.find(v => v === g.name) !== undefined) {
-					groupParam._id[g.name] = MongoProvider._fieldToIdName(g.name, m.pk.length > 1);
-				} else {
-					groupParam._id[g.name] = g.name;
-				}
-			});
-			fields.filter(f => f.operation).forEach(f => {
-				groupParam[f.as] = {};
-				groupParam[f.as][ops[f.operation]] = '$' + f.name;
-			});
-			aggregateParams.push({$group: groupParam});
+		if (idProjModified) {
+			aggregateParams.push({$project: idProjection});
 		}
 		if (sort.length !== 0) {
 			const sortParam = {};
@@ -159,11 +174,39 @@ class MongoProvider extends db.DatabaseProvider {
 			});
 			aggregateParams.push({$sort: sortParam});
 		}
-		if (projectModified) {
-			aggregateParams.push({$project: projection})
+		if (group.length > 0) {
+			const groupParam = {_id: {}};
+			group.forEach(g => {
+				groupParam._id[g.name] = '$' + g.name;
+			});
+			fields.filter(f => f.operation).forEach(f => {
+				groupParam[f.as] = {};
+				groupParam[f.as][ops[f.operation]] = '$' + f.name;
+			});
+			aggregateParams.push({$group: groupParam});
+			const groupRename = {};
+			group.forEach(g => {
+				groupRename[g.name] = '$_id.' + g.name;
+			});
+			fields.filter(f => f.operation).forEach(f => {
+				groupRename[f.as] = '$' + f.as;
+			});
+			aggregateParams.push({$project: groupRename});
 		}
+		const projection = {_id: 0};
+		fields.filter(f => f.operation).forEach(f => {
+			projection[f.as] = 1;
+		});
+		fields.filter(f => !f.operation).forEach(f => {
+			projection[f.as ? f.as : f.name] = 1;
+		});
+		aggregateParams.push({$project: projection});
 		try {
-			return await this.client.db().collection(model).aggregate(aggregateParams);
+			console.log(aggregateParams);
+			console.log(JSON.stringify(aggregateParams));
+			const res = await this.client.db().collection(model).aggregate(aggregateParams);
+			// console.log(res);
+			return res.toArray();
 		} catch (e) {
 			console.log('mongo get failed', e);
 			return null;
@@ -171,26 +214,57 @@ class MongoProvider extends db.DatabaseProvider {
 	}
 
 	static _fieldToIdName(name, isEmbed) {
-		return !isEmbed ? '_id' : '_id.' + name;
+		return !isEmbed ? '$_id' : '$_id.' + name;
 	}
 
-	static _whereArgToMatchObject(arg) {
+	static _whereArgToMatchObject(model, arg) {
 		if (arg instanceof db.WhereCondition) {
-			return MongoProvider._whereToObject(arg);
+			return MongoProvider._whereToObject(model, arg);
 		} else if (arg.type === 'Literal') {
 			return arg.value;
 		} else {
-			return '$' + arg.value;
+			if (model.pk.find(v => v === arg.value) !== undefined) {
+				return MongoProvider._fieldToIdName(arg.value, model.pk.length > 1);
+			} else {
+				return '$' + arg.value;
+			}
 		}
 	}
 
-	static _whereToObject(where) {
+	static _whereArgIsField(arg) {
+		return typeof arg === 'string' && arg.substr(0, 1) === '$';
+	}
+
+	static _whereToObject(model, where) {
 		const res = {};
 		if (where.opType === 'unary') {
-			res[ops['!']] = MongoProvider._whereArgToMatchObject(where.args[0]);
+			res[ops['!']] = MongoProvider._whereArgToMatchObject(model, where.args[0]);
 		} else {
-			res[ops[where.op]] = [MongoProvider._whereArgToMatchObject(where.args[0]), MongoProvider._whereArgToMatchObject(where.args[1])];
+			const arg0 = MongoProvider._whereArgToMatchObject(model, where.args[0]);
+			const arg1 = MongoProvider._whereArgToMatchObject(model, where.args[1]);
+			if (where.op === '&&' || where.op === '||') {
+				res[ops[where.op]] = [arg0, arg1];
+			} else if (where.op === '==') {
+				if (MongoProvider._whereArgIsField(arg0)) {
+					res[arg0.substr(1)] = arg1;
+				} else if (MongoProvider._whereArgIsField(arg1)) {
+					res[arg1.substr(1)] = arg0
+				} else {
+					throw new Error('condition no field');
+				}
+			} else {
+				if (MongoProvider._whereArgIsField(arg0)) {
+					res[arg0.substr(1)] = {};
+					res[arg0.substr(1)][ops[where.op]] = arg1;
+				} else if (MongoProvider._whereArgIsField(arg1)) {
+					res[arg1.substr(1)] = {};
+					res[arg1.substr(1)][ops[revert[where.op]]] = arg0;
+				} else {
+					throw new Error('condition no field');
+				}
+			}
 		}
+		return res;
 	}
 
 	async updateModels(model, sets, where) {
@@ -201,20 +275,22 @@ class MongoProvider extends db.DatabaseProvider {
 			throw new Error('invalid where');
 		}
 		const update = {$set: {}};
+		const m = this._models[model];
 		sets.forEach(s => {
-			if (s.value.isDefault) {
-				const d = this._models[model].fields[s.name].default;
+			if (s.value !== null && s.value.isDefault) {
+				const d = m.fields[s.name].default;
 				if (d === 'NOW()') {
 					update.$set[s.name] = new Date();
 				} else {
 					update.$set[s.name] = d;
 				}
 			} else {
-				update.$set[s.name] = s.value;
+				update.$set[s.name] = MongoProvider.maybeDouble(m, s.name, s.value);
 			}
 		});
 		try {
-			return await this.client.db().collection(model).updateMany(MongoProvider._whereToObject(where), update);
+			console.log(JSON.stringify(MongoProvider._whereToObject(m, where)), JSON.stringify(update));
+			return await this.client.db().collection(model).updateMany(MongoProvider._whereToObject(m, where), update);
 		} catch(e) {
 			console.log('mongo update failed', e);
 		}
@@ -224,8 +300,10 @@ class MongoProvider extends db.DatabaseProvider {
 		if (where && !this.validateWhereParameter(model, where.opType, where.op, where.args)) {
 			throw new Error('invalid where');
 		}
+		const m = this._models[model];
 		try {
-			return await this.client.db().collection(model).deleteMany(MongoProvider._whereToObject(where));
+			console.log(JSON.stringify(MongoProvider._whereToObject(m, where)));
+			return await this.client.db().collection(model).deleteMany(MongoProvider._whereToObject(m, where));
 		} catch (e) {
 			console.log('mongo delete failed', e);
 		}
@@ -238,7 +316,8 @@ class MongoProvider extends db.DatabaseProvider {
 			{
 				$inc: {value: 1}
 			});
-		return doc.value;
+		console.log(doc);
+		return doc.value.value;
 	}
 
 	async init(model) {
@@ -252,7 +331,7 @@ class MongoProvider extends db.DatabaseProvider {
 		}
 		const required = [];
 		const props = {};
-		required.push('_id');
+		// required.push('_id');
 		for (const prop in model.fields) {
 			const field = model.fields[prop];
 			if (model.pk.find(m => prop === m) !== undefined) {
@@ -281,10 +360,11 @@ class MongoProvider extends db.DatabaseProvider {
 				}
 				props[prop] = {
 					bsonType: types[field.typeName.toLowerCase()],
-					description: 'must be a ' + types[field.typeName.toLowerCase()] + field.notNull ? ' and required' : ''
+					description: 'must be a ' + types[field.typeName.toLowerCase()] + (field.notNull ? ' and required' : '')
 				}
 			}
 		}
+		console.log(required, props);
 		await this.client.db().createCollection(model.name, {
 			validator: {
 				$jsonSchema: {
@@ -307,3 +387,5 @@ class MongoProvider extends db.DatabaseProvider {
 		}
 	}
 }
+
+module.exports = MongoProvider;

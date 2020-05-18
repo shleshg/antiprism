@@ -15,6 +15,7 @@ exports.WhereCondition = db.WhereCondition;
 exports.SortParameter = db.SortParameter;
 exports.GroupingParameter = db.GroupingParameter;
 exports.PostgresqlProvider = postgresql.PostgresqlProvider;
+exports.MongoProvider = mongo.MongoProvider;
 exports.HttpProvider = http.HttpProvider;
 exports.PostData = http.PostData;
 exports.WsProvider = ws.WsProvider;
