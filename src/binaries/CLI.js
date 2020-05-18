@@ -8,6 +8,7 @@ const parser = require('../parser');
 const utils = require('../utils');
 const codegen = require('../codegen');
 const postgresql = require('../postgresql');
+const mongo = require('../mongo');
 
 const antiprismPath = path.resolve(__dirname, '..', '..');
 
@@ -104,9 +105,8 @@ function generateConfig(input) {
 }
 
 function generateDatabase(provider, cfg) {
-	const createStrings = cfg.models.map(m => provider.modelToInitString(m));
 	provider.connect().then(res => {
-		const promises = createStrings.map(c => provider.exec(c, []));
+		const promises = cfg.models.map(m => provider.init(m));
 		Promise.all(promises)
 			.catch(err => {
 				console.log('create table err ', err);
@@ -172,11 +172,16 @@ if (mainOptions.command === 'config') {
 	}
 } else if (mainOptions.command === 'database') {
 	const cfg = cfgOrInput(parseOptions);
+	let provider;
 	if (cfg.datasource.provider === 'postgresql') {
-		const pg = new postgresql.PostgresqlProvider(cfg.datasource.user, cfg.datasource.password,
+		provider = new postgresql.PostgresqlProvider(cfg.datasource.user, cfg.datasource.password,
 			cfg.datasource.database, cfg.datasource.port, cfg.models);
-		generateDatabase(pg, cfg);
+
+	} else if (cfg.datasource.provider === 'mongo') {
+		provider = new mongo.MongoProvider(cfg.datasource.user, cfg.datasource.password,
+			cfg.datasource.database, cfg.datasource.port, cfg.models);
 	}
+	generateDatabase(provider, cfg);
 } else if (mainOptions.command === 'client') {
 	const cfg = cfgOrInput(parseOptions);
 	const clientCode = codegen.generateClient(cfg);
@@ -199,11 +204,16 @@ if (mainOptions.command === 'config') {
 		return;
 	}
 	const cfg = cfgOrInput(parseOptions);
+	let provider;
 	if (cfg.datasource.provider === 'postgresql') {
-		const pg = new postgresql.PostgresqlProvider(cfg.datasource.user, cfg.datasource.password,
+		provider = new postgresql.PostgresqlProvider(cfg.datasource.user, cfg.datasource.password,
 			cfg.datasource.database, cfg.datasource.port, cfg.models);
-		generateDatabase(pg, cfg);
+
+	} else if (cfg.datasource.provider === 'mongo') {
+		provider = new mongo.MongoProvider(cfg.datasource.user, cfg.datasource.password,
+			cfg.datasource.database, cfg.datasource.port, cfg.models);
 	}
+	generateDatabase(provider, cfg);
 	generate(parseOptions, cfg);
 } else if (mainOptions.command === 'web') {
 	if (!parseOptions.output) {

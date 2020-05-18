@@ -24,7 +24,6 @@ const ops = {
 class PostgresqlProvider extends db.DatabaseProvider {
 	constructor(user, password, database, port, models) {
 		super(models);
-		console.log(user, password, database, port, models);
 		this._config = {};
 		if (user) {
 			this._config.user = user;
@@ -159,6 +158,10 @@ class PostgresqlProvider extends db.DatabaseProvider {
 		let cmd = 'delete from ' + model + ' ' + (where ? ('where ' + PostgresqlProvider._whereToString(where, params)) : '') + ' ;';
 		console.log(cmd, params);
 		return this.exec(cmd, params);
+	}
+
+	async init(model) {
+		return this.exec(this.modelToInitString(model));
 	}
 
 	modelToInitString(model) {

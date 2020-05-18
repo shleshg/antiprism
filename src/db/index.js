@@ -26,20 +26,14 @@ class DatabaseProvider {
 	disconnect() {
 		assert(false, 'unimplemented disconnect');
 	}
-	modelToInitString() {
-		assert(false, 'unimplemented modelToInitString');
-	}
-	exec() {
-		assert(false, 'unimplemented exec');
+	init() {
+		assert(false, 'unimplemented init');
 	}
 	validateGets(model, gets) {
 		return gets.map(f => this.validateGetParameter(model, f)).reduce((prev, cur) => prev && cur, true);
 	}
 	validateSets(model, sets) {
 		return sets.map(f =>  this.validateSetParameter(model, f.name, f.value)).reduce((prev, cur) => prev && cur, true);
-	}
-	validateWheres(model, wheres) {
-		return wheres.map(w => this.validateWhereParameter(model, w.opType, w.op, w.args)).reduce((prev, cur) => prev && cur, true);
 	}
 	validateSorts(model, sorts) {
 		return sorts.map(s => this.validateSortParameter(model, s.name)).reduce((prev, cur) => prev && cur, true);
