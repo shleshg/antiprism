@@ -30,7 +30,7 @@
     "ncp": "^2.0.0",
     "pg": "^8.0.2",
     "webpack": "^4.43.0",
-    "ws": "^7.2.5"
+    "ws": "^7.4.6"
   },
   "devDependencies": {
     "require-self": "^0.2.3",
